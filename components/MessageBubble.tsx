@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Message } from '../types';
 import { MathRenderer } from './MathRenderer';
+import { ImagePreviewModal } from './ImagePreviewModal';
 
 interface MessageBubbleProps {
   message: Message;
@@ -11,6 +12,7 @@ interface MessageBubbleProps {
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onGlossaryClick }) => {
   const isUser = message.role === 'user';
   const [isCopied, setIsCopied] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fullText = message.parts.map(p => 'text' in p ? p.text : '').join('\n');
 
   const handleCopy = () => {
@@ -46,7 +48,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onGlossar
                         key={index}
                         src={dataUrl}
                         alt="User upload"
-                        className="rounded-lg w-full max-w-xs sm:max-w-sm h-auto border-2 border-gray-600"
+                        className="rounded-lg w-full max-w-xs sm:max-w-sm h-auto border-2 border-gray-600 cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => setPreviewImage(dataUrl)}
+                        title="Click to view larger"
                     />
                 );
             }
@@ -77,6 +81,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onGlossar
           )}
         </button>
       )}
+
+      <ImagePreviewModal
+        imageUrl={previewImage || ''}
+        isOpen={previewImage !== null}
+        onClose={() => setPreviewImage(null)}
+      />
     </div>
   );
 };
