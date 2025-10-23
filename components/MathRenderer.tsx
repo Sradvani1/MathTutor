@@ -37,7 +37,7 @@ export const MathRenderer: React.FC<{ text: string; onGlossaryClick: (term: stri
             if (part.startsWith('$') && part.endsWith('$')) {
                 const latex = part.slice(1, -1).trim();
                 const html = window.katex.renderToString(latex, { displayMode: false, throwOnError: false, errorColor: '#ef4444' });
-                return <span key={index} className="inline-block max-w-full overflow-x-auto" dangerouslySetInnerHTML={{ __html: html }} />;
+                return <span key={index} className="inline-block align-middle max-w-full overflow-x-auto" dangerouslySetInnerHTML={{ __html: html }} />;
             }
 
             // Handle Glossary: [glossary:...]
