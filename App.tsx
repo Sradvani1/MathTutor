@@ -5,9 +5,14 @@ import { Message } from './types';
 import { startChat } from './services/geminiService';
 import { formatChatForExport } from './utils';
 import { Part, Content } from '@google/genai';
+import { useScript } from './hooks/useScript';
 
 const App: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
+  
+  // Dynamically load the KaTeX script to avoid quirks mode warnings.
+  // The MathRenderer component will re-render and use window.katex once it's available.
+  useScript('https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js');
 
   // Global error handler for better debugging
   useEffect(() => {
@@ -118,7 +123,7 @@ const App: React.FC = () => {
   }
   
   return (
-    <div className="flex flex-col h-screen bg-gray-900 text-gray-100 font-sans">
+    <div className="flex flex-col h-full bg-gray-900 text-gray-100 font-sans">
       <header className="bg-gray-800 shadow-md p-4">
         <div className="container mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -133,11 +138,11 @@ const App: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
                 <button onClick={handleExportChat} disabled={messages.length === 0} className="px-3 py-2 text-sm bg-gray-700 hover:bg-gray-600 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     Export
                 </button>
                  <button onClick={handleResetChat} disabled={messages.length === 0} className="px-3 py-2 text-sm bg-red-800 hover:bg-red-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
                     New Session
                 </button>
             </div>

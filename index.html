@@ -8,6 +8,19 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
+  <style>
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden; /* This is the critical fix: prevent the main document from EVER scrolling */
+    }
+    #root {
+      height: 100%; /* Occupy the full, non-scrollable viewport */
+    }
+  </style>
+
   <!-- KaTeX CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 
@@ -26,8 +39,7 @@
 <body class="bg-gray-900 text-white">
   <div id="root"></div>
 
-  <!-- Load KaTeX library. 'defer' ensures it runs after the HTML is parsed, avoiding quirks mode issues. -->
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <!-- KaTeX JS is now loaded dynamically in App.tsx to prevent quirks mode warnings -->
 
   <script type="module" src="/index.tsx"></script>
 </body>
