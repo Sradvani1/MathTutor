@@ -14,7 +14,7 @@ interface UserInputProps {
 const SuggestionButton: React.FC<{ onClick: () => void, children: React.ReactNode }> = ({ onClick, children }) => (
     <button
         onClick={onClick}
-        className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-gray-700 hover:bg-gray-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 whitespace-nowrap"
+        className="px-2 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-gray-700 hover:bg-gray-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 whitespace-nowrap flex-shrink-0"
     >
         {children}
     </button>
@@ -97,19 +97,21 @@ export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, 
   return (
     <div className="space-y-3 w-full">
         {showSuggestions && !isLoading && (
-            <div className="flex flex-wrap gap-2 justify-center px-2">
-                <SuggestionButton onClick={() => handleSuggestionClick("Give me a hint")}>
-                    🤔 Hint
-                </SuggestionButton>
-                <SuggestionButton onClick={() => handleSuggestionClick("Why did we do that?")}>
-                    🧐 Why?
-                </SuggestionButton>
-                <SuggestionButton onClick={() => handleSuggestionClick("What's the next step?")}>
-                    ✅ Next Step
-                </SuggestionButton>
-                 <SuggestionButton onClick={() => handleSuggestionClick("Explain that differently")}>
-                    💡 Re-explain
-                </SuggestionButton>
+            <div className="w-full max-w-4xl mx-auto">
+                <div className="flex flex-nowrap gap-1.5 sm:gap-2 justify-center px-2 overflow-x-auto">
+                    <SuggestionButton onClick={() => handleSuggestionClick("Give me a hint")}>
+                        🤔 Hint
+                    </SuggestionButton>
+                    <SuggestionButton onClick={() => handleSuggestionClick("Why did we do that?")}>
+                        🧐 Why?
+                    </SuggestionButton>
+                    <SuggestionButton onClick={() => handleSuggestionClick("What's the next step?")}>
+                        ✅ Next Step
+                    </SuggestionButton>
+                     <SuggestionButton onClick={() => handleSuggestionClick("Explain that differently")}>
+                        💡 Re-explain
+                    </SuggestionButton>
+                </div>
             </div>
         )}
         <div className="flex items-stretch gap-2 w-full max-w-4xl mx-auto">
