@@ -14,7 +14,7 @@ interface UserInputProps {
 const SuggestionButton: React.FC<{ onClick: () => void, children: React.ReactNode }> = ({ onClick, children }) => (
     <button
         onClick={onClick}
-        className="px-4 py-2 text-sm bg-gray-700 hover:bg-gray-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+        className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-gray-700 hover:bg-gray-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 whitespace-nowrap"
     >
         {children}
     </button>
@@ -95,9 +95,9 @@ export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, 
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 w-full">
         {showSuggestions && !isLoading && (
-            <div className="flex flex-wrap gap-2 justify-center">
+            <div className="flex flex-wrap gap-2 justify-center px-2">
                 <SuggestionButton onClick={() => handleSuggestionClick("Give me a hint")}>
                     🤔 Hint
                 </SuggestionButton>
@@ -112,7 +112,7 @@ export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, 
                 </SuggestionButton>
             </div>
         )}
-        <div className="flex items-center gap-2 p-2 bg-gray-700 rounded-full">
+        <div className="flex items-stretch gap-2 w-full max-w-4xl mx-auto">
             <input
                 ref={fileInputRef}
                 type="file"
@@ -121,40 +121,42 @@ export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, 
                 className="hidden"
                 disabled={isLoading}
             />
-            <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
-                className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-600 transition-colors disabled:opacity-50"
-                aria-label="Upload image"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-            </button>
-            <input
-                type="text"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                placeholder={isChatActive ? "Ask a follow-up question..." : "Upload a problem to start"}
-                className="flex-1 bg-transparent px-2 py-2 text-white placeholder-gray-400 focus:outline-none"
-                disabled={isLoading || !isChatActive}
-            />
-            {recognitionRef.current && (
-              <button
-                onClick={handleMicClick}
-                disabled={isLoading || !isChatActive}
-                className={`p-2 rounded-full transition-colors disabled:opacity-50 ${isListening ? 'text-red-500 animate-pulse' : 'text-gray-400 hover:text-white hover:bg-gray-600'}`}
-                aria-label="Use microphone"
-              >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-              </button>
-            )}
+            <div className="flex items-center flex-1 gap-2 px-4 py-2 bg-gray-700 rounded-full min-h-[48px]">
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isLoading}
+                    className="flex-shrink-0 p-1.5 rounded-full text-gray-400 hover:text-white hover:bg-gray-600 transition-colors disabled:opacity-50"
+                    aria-label="Upload image"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                </button>
+                <input
+                    type="text"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                    placeholder={isChatActive ? "Ask a follow-up question..." : "Upload a problem to start"}
+                    className="flex-1 bg-transparent text-white placeholder-gray-400 focus:outline-none min-w-0"
+                    disabled={isLoading || !isChatActive}
+                />
+                {recognitionRef.current && (
+                  <button
+                    onClick={handleMicClick}
+                    disabled={isLoading || !isChatActive}
+                    className={`flex-shrink-0 p-1.5 rounded-full transition-colors disabled:opacity-50 ${isListening ? 'text-red-500 animate-pulse' : 'text-gray-400 hover:text-white hover:bg-gray-600'}`}
+                    aria-label="Use microphone"
+                  >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                  </button>
+                )}
+            </div>
             <button
                 onClick={handleSend}
                 disabled={isLoading || !text.trim() || !isChatActive}
-                className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-500 disabled:bg-gray-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="flex-shrink-0 w-12 h-12 rounded-full bg-blue-600 text-white hover:bg-blue-500 disabled:bg-gray-600 disabled:opacity-50 transition-all focus:outline-none focus:ring-2 focus:ring-blue-400 flex items-center justify-center shadow-lg hover:shadow-xl active:scale-95"
                 aria-label="Send message"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
         </div>
     </div>

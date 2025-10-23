@@ -123,32 +123,42 @@ const App: React.FC = () => {
   }
   
   return (
-    <div className="flex flex-col h-full bg-gray-900 text-gray-100 font-sans">
-      <header className="bg-gray-800 shadow-md p-4">
-        <div className="container mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            <h1 className="text-xl md:text-2xl font-bold text-white">
-                Socratic Math Tutor
-            </h1>
+    <div className="flex flex-col h-full bg-gray-900 text-gray-100 font-sans overflow-hidden">
+      <header className="flex-shrink-0 bg-gray-800 shadow-md px-3 py-3 sm:px-4 sm:py-4 lg:px-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8 text-teal-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              <h1 className="text-base sm:text-xl lg:text-2xl font-bold text-white truncate">
+                  Socratic Math Tutor
+              </h1>
             </div>
-            <div className="flex items-center gap-2">
-                <button onClick={handleExportChat} disabled={messages.length === 0} className="px-3 py-2 text-sm bg-gray-700 hover:bg-gray-600 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                <button
+                  onClick={handleExportChat}
+                  disabled={messages.length === 0}
+                  className="px-2 py-2 sm:px-3 sm:py-2 text-xs sm:text-sm bg-gray-700 hover:bg-gray-600 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 sm:gap-2"
+                  title="Export Chat"
+                >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    Export
+                    <span className="hidden sm:inline">Export</span>
                 </button>
-                 <button onClick={handleResetChat} disabled={messages.length === 0} className="px-3 py-2 text-sm bg-red-800 hover:bg-red-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                <button
+                  onClick={handleResetChat}
+                  disabled={messages.length === 0}
+                  className="px-2 py-2 sm:px-3 sm:py-2 text-xs sm:text-sm bg-red-800 hover:bg-red-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 sm:gap-2"
+                  title="New Session"
+                >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-                    New Session
+                    <span className="hidden sm:inline">New Session</span>
                 </button>
             </div>
         </div>
       </header>
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden min-h-0">
         <ChatInterface messages={messages} addMessage={addMessage} setMessages={setMessages} />
       </main>
     </div>

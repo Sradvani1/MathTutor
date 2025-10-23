@@ -9,17 +9,65 @@
   <script src="https://cdn.tailwindcss.com"></script>
   
   <style>
-    html, body {
+    :root {
+      /* CSS custom property for viewport height that accounts for mobile address bars */
+      --viewport-height: 100vh;
+    }
+
+    html {
       height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    body {
+      height: 100vh; /* Fallback */
+      height: var(--viewport-height);
       width: 100%;
       margin: 0;
       padding: 0;
-      overflow: hidden; /* This is the critical fix: prevent the main document from EVER scrolling */
+      overflow: hidden;
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: touch;
     }
+
     #root {
-      height: 100%; /* Occupy the full, non-scrollable viewport */
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Additional mobile optimizations */
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .overflow-y-auto {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Force layout stability on mobile */
+    @supports (-webkit-touch-callout: none) {
+      body {
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+      }
     }
   </style>
+
+  <script>
+    // Set CSS variable for actual viewport height (handles mobile address bars)
+    function setViewportHeight() {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--viewport-height', `${window.innerHeight}px`);
+    }
+    setViewportHeight();
+    window.addEventListener('resize', setViewportHeight);
+    window.addEventListener('orientationchange', setViewportHeight);
+  </script>
 
   <!-- KaTeX CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">

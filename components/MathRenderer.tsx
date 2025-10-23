@@ -30,14 +30,14 @@ export const MathRenderer: React.FC<{ text: string; onGlossaryClick: (term: stri
             if (part.startsWith('$$') && part.endsWith('$$')) {
                 const latex = part.slice(2, -2).trim();
                 const html = window.katex.renderToString(latex, { displayMode: true, throwOnError: false, errorColor: '#ef4444' });
-                return <span key={index} dangerouslySetInnerHTML={{ __html: html }} />;
+                return <div key={index} className="overflow-x-auto max-w-full" dangerouslySetInnerHTML={{ __html: html }} />;
             }
 
             // Handle Inline Math: $...$
             if (part.startsWith('$') && part.endsWith('$')) {
                 const latex = part.slice(1, -1).trim();
                 const html = window.katex.renderToString(latex, { displayMode: false, throwOnError: false, errorColor: '#ef4444' });
-                return <span key={index} dangerouslySetInnerHTML={{ __html: html }} />;
+                return <span key={index} className="inline-block max-w-full overflow-x-auto" dangerouslySetInnerHTML={{ __html: html }} />;
             }
 
             // Handle Glossary: [glossary:...]
@@ -67,5 +67,5 @@ export const MathRenderer: React.FC<{ text: string; onGlossaryClick: (term: stri
         });
     }, [text, onGlossaryClick]);
 
-    return <div className="whitespace-pre-wrap">{renderedParts}</div>;
+    return <div className="whitespace-pre-wrap break-words overflow-hidden">{renderedParts}</div>;
 });

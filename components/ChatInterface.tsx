@@ -23,13 +23,29 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
   const [isGlossaryLoading, setIsGlossaryLoading] = useState<boolean>(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isChatActive = messages.length > 0;
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollContainerRef.current) {
+      // Use scrollTo for better mobile support
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: 'auto' // Use 'auto' instead of 'smooth' to prevent mobile issues
+      });
+    }
   };
 
-  useEffect(scrollToBottom, [messages, isLoading]);
+  useEffect(() => {
+    // Use a single RAF to scroll after render
+    // This is sufficient for both desktop and mobile
+    const rafId = requestAnimationFrame(() => {
+      // Small delay for KaTeX rendering
+      setTimeout(scrollToBottom, 100);
+    });
+
+    return () => cancelAnimationFrame(rafId);
+  }, [messages, isLoading]);
   
   const handleOpenGlossary = async (term: string) => {
       setGlossaryTerm(term);
@@ -95,29 +111,35 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
 
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="flex-1 overflow-y-auto min-h-0 p-4 md:p-6 flex flex-col gap-6">
-        {messages.length === 0 && <WelcomeScreen onImageUpload={handleImageUpload} />}
-        {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} onGlossaryClick={handleOpenGlossary} />
-        ))}
-        {isLoading && (
-            <div className="flex items-end gap-2 justify-start">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-white font-bold self-start">
-                  AI
-                </div>
-                <div className="rounded-2xl p-4 max-w-sm bg-gray-700 shadow-md">
-                    <div className="flex space-x-2">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{animationDelay: '-0.3s'}}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{animationDelay: '-0.15s'}}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-                    </div>
-                </div>
-            </div>
-        )}
-        <div ref={messagesEndRef} />
+    <div className="flex flex-col h-full">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 lg:px-6 lg:py-8 flex flex-col gap-4 sm:gap-5 lg:gap-6"
+        style={{ WebkitOverflowScrolling: 'touch', minHeight: 0 }}
+      >
+        <div className="max-w-4xl mx-auto w-full flex flex-col gap-4 sm:gap-5 lg:gap-6">
+          {messages.length === 0 && <WelcomeScreen onImageUpload={handleImageUpload} />}
+          {messages.map((msg) => (
+            <MessageBubble key={msg.id} message={msg} onGlossaryClick={handleOpenGlossary} />
+          ))}
+          {isLoading && (
+              <div className="flex items-end gap-2 justify-start">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-white font-bold self-start text-xs">
+                    AI
+                  </div>
+                  <div className="rounded-2xl p-3 sm:p-4 max-w-sm bg-gray-700 shadow-md">
+                      <div className="flex space-x-2">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{animationDelay: '-0.3s'}}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{animationDelay: '-0.15s'}}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                      </div>
+                  </div>
+              </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
-      <div className="p-4 bg-gray-800/50 backdrop-blur-sm border-t border-gray-700">
+      <div className="flex-shrink-0 px-3 py-3 sm:px-4 sm:py-4 bg-gray-800/50 backdrop-blur-sm border-t border-gray-700">
         <UserInput
           isLoading={isLoading}
           onSendMessage={handleSendMessage}
@@ -126,11 +148,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
           isChatActive={isChatActive}
         />
       </div>
-       <GlossaryModal 
-        term={glossaryTerm} 
-        definition={glossaryDefinition} 
+       <GlossaryModal
+        term={glossaryTerm}
+        definition={glossaryDefinition}
         isLoading={isGlossaryLoading}
-        onClose={handleCloseGlossary} 
+        onClose={handleCloseGlossary}
       />
     </div>
   );
