@@ -24,18 +24,78 @@ export const startChat = (history?: Content[]) => {
 export const sendMessage = async (
     prompt: Part[]
 ): Promise<string> => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'geminiService.ts:24',message:'sendMessage entry',data:{hasChat:!!chat,hasImage:prompt.some(p=>'inlineData' in p),imageSize:prompt.find(p=>'inlineData' in p)?(prompt.find(p=>'inlineData' in p) as any).inlineData?.data?.length:0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
     if (!chat) {
        startChat();
     }
     if (!chat) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'geminiService.ts:31',message:'chat initialization failed',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         throw new Error("Chat could not be initialized.");
     }
 
-    const result: GenerateContentResponse = await chat.sendMessage({ message: prompt });
-    if (!result.text) {
-        throw new Error("No response text received from the AI model.");
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'geminiService.ts:34',message:'before API call',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
+    try {
+        // Add timeout for mobile networks that may be slow
+        const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('Request timed out. Please check your internet connection and try again.')), 60000); // 60 second timeout
+        });
+        
+        const result: GenerateContentResponse = await Promise.race([
+            chat.sendMessage({ message: prompt }),
+            timeoutPromise
+        ]);
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'geminiService.ts:35',message:'API call success',data:{hasText:!!result.text,textLength:result.text?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
+        if (!result.text) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'geminiService.ts:36',message:'API returned no text',data:{resultKeys:Object.keys(result)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
+            throw new Error("The AI model didn't return a response. This might be due to image processing issues. Please try uploading a different image.");
+        }
+        return result.text;
+    } catch (error) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'geminiService.ts:39',message:'API call error',data:{errorMessage:error instanceof Error?error.message:String(error),errorName:error instanceof Error?error.name:'Unknown',errorStack:error instanceof Error?error.stack?.substring(0,500):undefined,isNetworkError:error instanceof Error&&error.message.includes('fetch'),isTimeout:error instanceof Error&&error.message.includes('timeout')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
+        
+        // Provide user-friendly error messages
+        if (error instanceof Error) {
+            const errorMsg = error.message.toLowerCase();
+            
+            // Network/timeout errors
+            if (errorMsg.includes('timeout') || errorMsg.includes('network') || errorMsg.includes('fetch')) {
+                throw new Error('Network connection issue. Please check your internet connection and try again.');
+            }
+            
+            // API errors that might indicate image issues
+            if (errorMsg.includes('400') || errorMsg.includes('bad request')) {
+                throw new Error('The image could not be processed. Please try a different image or check that it\'s in a supported format (PNG, JPEG, WebP).');
+            }
+            
+            if (errorMsg.includes('413') || errorMsg.includes('too large') || errorMsg.includes('payload')) {
+                throw new Error('Image is too large. Please use an image smaller than 7 MB.');
+            }
+            
+            if (errorMsg.includes('429') || errorMsg.includes('rate limit')) {
+                throw new Error('Too many requests. Please wait a moment and try again.');
+            }
+            
+            if (errorMsg.includes('401') || errorMsg.includes('403') || errorMsg.includes('unauthorized')) {
+                throw new Error('Authentication error. Please refresh the page and try again.');
+            }
+        }
+        
+        // Re-throw with original message if we couldn't categorize it
+        throw error;
     }
-    return result.text;
 };
 
 export const getGlossaryDefinition = async (term: string): Promise<string> => {

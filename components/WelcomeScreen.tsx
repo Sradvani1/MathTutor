@@ -9,15 +9,31 @@ interface WelcomeScreenProps {
 
 export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onImageUpload }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
+        setErrorMessage(null); // Clear previous errors
+        
         if (file) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WelcomeScreen.tsx:13',message:'file selected (welcome)',data:{fileName:file.name,fileSize:file.size,fileType:file.type,sizeMB:(file.size/1024/1024).toFixed(2),isMobile:window.innerWidth<640,userAgent:navigator.userAgent.substring(0,100)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
             try {
                 const imageFile = await fileToImageFile(file);
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WelcomeScreen.tsx:17',message:'fileToImageFile success (welcome), calling onImageUpload',data:{mimeType:imageFile.mimeType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                // #endregion
                 onImageUpload(imageFile);
             } catch (error) {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WelcomeScreen.tsx:19',message:'fileToImageFile error (welcome)',data:{errorMessage:error instanceof Error?error.message:String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
                 console.error("Error processing file:", error);
+                const errorMsg = error instanceof Error ? error.message : "Failed to process image. Please try again.";
+                setErrorMessage(errorMsg);
+                // Clear error after 5 seconds
+                setTimeout(() => setErrorMessage(null), 5000);
             }
         }
         if(event.target) {
@@ -34,6 +50,13 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onImageUpload }) =
                 <p className="text-sm sm:text-base lg:text-lg text-gray-400 mb-6 sm:mb-8 px-2">
                     Stuck on a tricky calculus or algebra problem? Don't just get the answer, understand the process. Upload a photo of your problem, and I'll guide you through it, one step at a time.
                 </p>
+                {errorMessage && (
+                    <div className="mb-4 px-4">
+                        <div className="bg-red-900/80 border border-red-700 text-red-100 px-4 py-3 rounded-lg text-sm max-w-md mx-auto">
+                            {errorMessage}
+                        </div>
+                    </div>
+                )}
                 <input
                     ref={fileInputRef}
                     type="file"

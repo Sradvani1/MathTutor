@@ -24,6 +24,7 @@ const SuggestionButton: React.FC<{ onClick: () => void, children: React.ReactNod
 export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, onImageUpload, showSuggestions, isChatActive }) => {
   const [text, setText] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -68,12 +69,27 @@ export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, 
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    setErrorMessage(null); // Clear previous errors
+    
     if (file) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserInput.tsx:69',message:'file selected',data:{fileName:file.name,fileSize:file.size,fileType:file.type,sizeMB:(file.size/1024/1024).toFixed(2),isMobile:window.innerWidth<640,userAgent:navigator.userAgent.substring(0,100)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       try {
         const imageFile = await fileToImageFile(file);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserInput.tsx:73',message:'fileToImageFile success, calling onImageUpload',data:{mimeType:imageFile.mimeType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
         onImageUpload(imageFile);
       } catch (error) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserInput.tsx:75',message:'fileToImageFile error',data:{errorMessage:error instanceof Error?error.message:String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         console.error("Error processing file:", error);
+        const errorMsg = error instanceof Error ? error.message : "Failed to process image. Please try again.";
+        setErrorMessage(errorMsg);
+        // Clear error after 5 seconds
+        setTimeout(() => setErrorMessage(null), 5000);
       }
     }
      // Reset file input value to allow uploading the same file again
@@ -96,9 +112,16 @@ export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, 
 
   return (
     <div className="space-y-3 w-full">
+        {errorMessage && (
+            <div className="w-full max-w-4xl mx-auto px-2">
+                <div className="bg-red-900/80 border border-red-700 text-red-100 px-3 py-2 rounded-lg text-sm">
+                    {errorMessage}
+                </div>
+            </div>
+        )}
         {showSuggestions && !isLoading && (
-            <div className="w-full max-w-4xl mx-auto">
-                <div className="flex flex-nowrap gap-1.5 sm:gap-2 justify-center px-2 overflow-x-auto">
+            <div className="w-full">
+                <div className="flex flex-nowrap gap-1.5 sm:gap-2 justify-center overflow-x-auto px-1">
                     <SuggestionButton onClick={() => handleSuggestionClick("Why did we do that?")}>
                         🧐 Why?
                     </SuggestionButton>
@@ -111,7 +134,7 @@ export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, 
                 </div>
             </div>
         )}
-        <div className="flex items-stretch gap-2 w-full max-w-4xl mx-auto">
+        <div className="flex items-center gap-2 w-full">
             <input
                 ref={fileInputRef}
                 type="file"
@@ -120,7 +143,7 @@ export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, 
                 className="hidden"
                 disabled={isLoading}
             />
-            <div className="flex items-center flex-1 gap-2 px-4 py-2 bg-gray-700 rounded-full min-h-[48px]">
+            <div className="flex items-center flex-1 gap-2 px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-700 rounded-full min-h-[48px] max-h-[48px]">
                 <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isLoading}
@@ -135,7 +158,7 @@ export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, 
                     onChange={(e) => setText(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                     placeholder={isChatActive ? "Ask a follow-up question..." : "Upload a problem to start"}
-                    className="flex-1 bg-transparent text-white placeholder-gray-400 focus:outline-none min-w-0"
+                    className="flex-1 bg-transparent text-white placeholder-gray-400 focus:outline-none min-w-0 text-sm sm:text-base"
                     disabled={isLoading || !isChatActive}
                 />
                 {recognitionRef.current && (

@@ -46,6 +46,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
     const updateInputHeight = () => {
       if (inputContainerRef.current) {
         const height = inputContainerRef.current.offsetHeight;
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:46',message:'updateInputHeight called',data:{newHeight:height,oldHeight:inputContainerHeight,isMobile:window.innerWidth<640,showSuggestions,isLoading},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+        // #endregion
         setInputContainerHeight(height);
       }
     };
@@ -102,13 +105,34 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
   };
 
   const handleImageUpload = async (imageFile: ImageFile) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:104',message:'handleImageUpload entry',data:{mimeType:imageFile.mimeType,dataLength:imageFile.data.length,estimatedSizeMB:(imageFile.data.length*3/4/1024/1024).toFixed(2),isMobile:window.innerWidth<640,windowWidth:window.innerWidth,inputContainerHeight},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
+    // Use a flag to track if we should show error message
+    let shouldShowErrorMessage = true;
+    
     try {
-      setIsLoading(true);
-      setShowSuggestions(false);
+      // Use requestAnimationFrame to ensure state updates happen safely, especially on mobile
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          try {
+            setIsLoading(true);
+            setShowSuggestions(false);
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:109',message:'state updates: setIsLoading(true), setShowSuggestions(false)',data:{isMobile:window.innerWidth<640},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+            // #endregion
+            resolve();
+          } catch (stateError) {
+            console.error("Error setting initial state:", stateError);
+            resolve(); // Continue anyway
+          }
+        });
+      });
 
       const imagePart: Part = {
           inlineData: {
-              mimeType: imageFile.mimeType,
+              mimeType: imageFile.mimeType || 'image/jpeg', // Fallback
               data: imageFile.data,
           },
       };
@@ -124,13 +148,72 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
       // This is what will be displayed in the UI for the user's message
       const uiMessageParts: Part[] = [imagePart];
       
-      addMessage('user', uiMessageParts, modelPromptParts); // Show only image in UI, but save full prompt
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:127',message:'before addMessage',data:{hasImagePart:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+      // #endregion
+      
+      try {
+        addMessage('user', uiMessageParts, modelPromptParts); // Show only image in UI, but save full prompt
+      } catch (addMessageError) {
+        console.error("Error adding message:", addMessageError);
+        // Don't show error message if we couldn't even add the user message
+        shouldShowErrorMessage = false;
+        throw addMessageError;
+      }
+      
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:128',message:'after addMessage, before API call',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+      // #endregion
+      
       await getAIResponse(modelPromptParts);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:129',message:'after API call success',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:130',message:'handleImageUpload error caught',data:{errorMessage:error instanceof Error?error.message:String(error),errorName:error instanceof Error?error.name:'Unknown',errorStack:error instanceof Error?error.stack?.substring(0,500):undefined,isMobile:window.innerWidth<640},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
       console.error("Error handling image upload:", error);
-      setIsLoading(false);
-      setShowSuggestions(true);
-      addMessage('model', [{ text: "I encountered an error processing your image. Please try uploading again." }]);
+      
+      // Get user-friendly error message
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "I encountered an error processing your image. Please try uploading again.";
+      
+      // Safely recover state and show error message
+      try {
+        // Use requestAnimationFrame for safe state updates on mobile
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => {
+            try {
+              setIsLoading(false);
+              setShowSuggestions(true);
+              if (shouldShowErrorMessage) {
+                addMessage('model', [{ text: errorMessage }]);
+              }
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:148',message:'error recovery state updates completed',data:{isMobile:window.innerWidth<640},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+              // #endregion
+              resolve();
+            } catch (recoveryError) {
+              console.error("Error during error recovery:", recoveryError);
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:149',message:'error recovery failed - state update error',data:{recoveryError:recoveryError instanceof Error?recoveryError.message:String(recoveryError),isMobile:window.innerWidth<640},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+              // #endregion
+              resolve(); // Don't throw, just log
+            }
+          });
+        });
+      } catch (finalError) {
+        // Last resort: at least log it
+        console.error("Critical error during recovery:", finalError);
+        // Try to at least reset loading state
+        try {
+          setIsLoading(false);
+        } catch {
+          // If even this fails, the app might be in a bad state, but we've done our best
+        }
+      }
     }
   };
 
@@ -142,13 +225,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
   };
   
   const getAIResponse = async (prompt: Part[]) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:144',message:'getAIResponse entry',data:{hasImage:prompt.some(p=>'inlineData' in p)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
     setIsLoading(true);
     setShowSuggestions(false);
     
     try {
         const responseText = await sendMessage(prompt);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:149',message:'sendMessage success',data:{responseLength:responseText.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         addMessage('model', [{ text: responseText }]);
     } catch (error) {
+         // #region agent log
+         fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:152',message:'getAIResponse error caught',data:{errorMessage:error instanceof Error?error.message:String(error),errorName:error instanceof Error?error.name:'Unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+         // #endregion
          console.error("Error getting response:", error);
          addMessage('model', [{ text: "I encountered an error. Could you please rephrase or try again?" }]);
     } finally {
@@ -193,19 +285,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
       </div>
       <div 
         ref={inputContainerRef}
-        className={`px-3 py-3 sm:px-4 sm:py-4 border-t border-gray-700 ${
+        className={`w-full border-t border-gray-700 ${
           isMobile 
-            ? 'fixed bottom-0 left-0 right-0 z-10 bg-gray-800' 
-            : 'flex-shrink-0 bg-gray-800/50 backdrop-blur-sm'
+            ? 'fixed bottom-0 left-0 right-0 z-10 bg-gray-800 px-3 py-3' 
+            : 'flex-shrink-0 bg-gray-800/50 backdrop-blur-sm px-4 py-4'
         }`}
       >
-        <UserInput
-          isLoading={isLoading}
-          onSendMessage={handleSendMessage}
-          onImageUpload={handleImageUpload}
-          showSuggestions={showSuggestions}
-          isChatActive={isChatActive}
-        />
+        <div className="w-full max-w-4xl mx-auto">
+          <UserInput
+            isLoading={isLoading}
+            onSendMessage={handleSendMessage}
+            onImageUpload={handleImageUpload}
+            showSuggestions={showSuggestions}
+            isChatActive={isChatActive}
+          />
+        </div>
       </div>
        <GlossaryModal
         term={glossaryTerm}

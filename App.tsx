@@ -31,6 +31,9 @@ const App: React.FC = () => {
           reason: event.reason,
         };
       }
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:19',message:'global error caught',data:{errorType:event instanceof ErrorEvent?'ErrorEvent':'PromiseRejectionEvent',error:JSON.stringify(error).substring(0,500),isMobile:window.innerWidth<640},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+      // #endregion
       console.error("A global error was caught, preventing a crash:", error);
     };
 
