@@ -48,9 +48,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onGlossar
                         key={index}
                         src={dataUrl}
                         alt="User upload"
-                        className="rounded-lg w-full max-w-xs sm:max-w-sm h-auto border-2 border-gray-600 cursor-pointer hover:opacity-90 transition-opacity"
+                        loading="eager"
+                        className="rounded-lg w-full max-w-xs sm:max-w-sm h-auto border-2 border-gray-600 cursor-pointer hover:opacity-90 transition-opacity block"
                         onClick={() => setPreviewImage(dataUrl)}
                         title="Click to view larger"
+                        style={{ display: 'block' }}
                     />
                 );
             }

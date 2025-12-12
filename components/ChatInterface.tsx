@@ -113,22 +113,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
     let shouldShowErrorMessage = true;
     
     try {
-      // Use requestAnimationFrame to ensure state updates happen safely, especially on mobile
-      await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => {
-          try {
-            setIsLoading(true);
-            setShowSuggestions(false);
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:109',message:'state updates: setIsLoading(true), setShowSuggestions(false)',data:{isMobile:window.innerWidth<640},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-            // #endregion
-            resolve();
-          } catch (stateError) {
-            console.error("Error setting initial state:", stateError);
-            resolve(); // Continue anyway
-          }
-        });
-      });
+      // Set loading state immediately (synchronously) so UI updates right away
+      setIsLoading(true);
+      setShowSuggestions(false);
 
       const imagePart: Part = {
           inlineData: {
@@ -152,6 +139,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
       fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:127',message:'before addMessage',data:{hasImagePart:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
       // #endregion
       
+      // Add message immediately so image displays right away
       try {
         addMessage('user', uiMessageParts, modelPromptParts); // Show only image in UI, but save full prompt
       } catch (addMessageError) {
