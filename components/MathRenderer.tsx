@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 // Make TypeScript aware of the global `katex` object attached to the window
 // by the script loaded in index.html.
@@ -11,6 +11,25 @@ declare global {
 }
 
 export const MathRenderer: React.FC<{ text: string; onGlossaryClick: (term: string) => void; }> = React.memo(({ text, onGlossaryClick }) => {
+    const [fontsReady, setFontsReady] = useState(false);
+    
+    // Ensure fonts are loaded before rendering to prevent black spots
+    useEffect(() => {
+        if (typeof document !== 'undefined' && document.fonts) {
+            // Check if fonts are already loaded
+            if (document.fonts.status === 'loaded') {
+                setFontsReady(true);
+            } else {
+                // Wait for fonts to load
+                document.fonts.ready.then(() => {
+                    setFontsReady(true);
+                });
+            }
+        } else {
+            // Fallback: assume fonts are ready if Font Loading API is not available
+            setFontsReady(true);
+        }
+    }, []);
     
     // A fallback to prevent a crash if the KaTeX script fails to load.
     if (typeof window === 'undefined' || !window.katex) {
@@ -65,7 +84,7 @@ export const MathRenderer: React.FC<{ text: string; onGlossaryClick: (term: stri
             // Render regular text.
             return <span key={index}>{part}</span>;
         });
-    }, [text, onGlossaryClick]);
+    }, [text, onGlossaryClick, fontsReady]);
 
     return <div className="whitespace-pre-wrap break-words overflow-hidden">{renderedParts}</div>;
 });

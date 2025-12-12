@@ -56,6 +56,57 @@
         min-height: -webkit-fill-available;
       }
     }
+
+    /* KaTeX rendering fixes to prevent black spots */
+    /* Ensure proper font rendering and prevent font loading artifacts */
+    .katex {
+      font: normal 1.21em KaTeX_Main, "Times New Roman", serif;
+      line-height: 1.2;
+      white-space: nowrap;
+      text-indent: 0;
+      text-rendering: auto;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Prevent black spots by ensuring all KaTeX elements render properly */
+    .katex * {
+      border-color: currentColor;
+    }
+
+    .katex .base {
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .katex .strut {
+      display: inline-block;
+    }
+
+    /* Ensure proper rendering of KaTeX symbols and prevent rendering artifacts */
+    .katex .vlist-t,
+    .katex .vlist-s,
+    .katex .vlist-r {
+      display: inline-block;
+    }
+
+    /* Fix for inline math rendering */
+    .katex-display {
+      display: block;
+      margin: 1em 0;
+      text-align: center;
+    }
+
+    .katex-display > .katex {
+      display: inline-block;
+      text-align: initial;
+    }
+
+    /* Prevent Tailwind from interfering with KaTeX styles */
+    .katex,
+    .katex * {
+      box-sizing: border-box;
+    }
   </style>
 
   <script>
