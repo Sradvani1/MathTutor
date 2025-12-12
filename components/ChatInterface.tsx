@@ -102,29 +102,36 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
   };
 
   const handleImageUpload = async (imageFile: ImageFile) => {
-    setIsLoading(true);
-    setShowSuggestions(false);
+    try {
+      setIsLoading(true);
+      setShowSuggestions(false);
 
-    const imagePart: Part = {
-        inlineData: {
-            mimeType: imageFile.mimeType,
-            data: imageFile.data,
-        },
-    };
-    
-    // This is the full prompt that will be sent to the AI model
-    const modelPromptParts: Part[] = [
-        imagePart,
-        {
-            text: "Here is a math problem I'm working on. Please look at the image, identify the problem, and explain how to solve it step-by-step."
-        }
-    ];
-    
-    // This is what will be displayed in the UI for the user's message
-    const uiMessageParts: Part[] = [imagePart];
-    
-    addMessage('user', uiMessageParts, modelPromptParts); // Show only image in UI, but save full prompt
-    await getAIResponse(modelPromptParts);
+      const imagePart: Part = {
+          inlineData: {
+              mimeType: imageFile.mimeType,
+              data: imageFile.data,
+          },
+      };
+      
+      // This is the full prompt that will be sent to the AI model
+      const modelPromptParts: Part[] = [
+          imagePart,
+          {
+              text: "Here is a math problem I'm working on. Please look at the image, identify the problem, and explain how to solve it step-by-step."
+          }
+      ];
+      
+      // This is what will be displayed in the UI for the user's message
+      const uiMessageParts: Part[] = [imagePart];
+      
+      addMessage('user', uiMessageParts, modelPromptParts); // Show only image in UI, but save full prompt
+      await getAIResponse(modelPromptParts);
+    } catch (error) {
+      console.error("Error handling image upload:", error);
+      setIsLoading(false);
+      setShowSuggestions(true);
+      addMessage('model', [{ text: "I encountered an error processing your image. Please try uploading again." }]);
+    }
   };
 
   const handleSendMessage = async (text: string) => {
