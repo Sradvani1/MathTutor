@@ -44,12 +44,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onImageUpload }) =
     return (
         <div className="text-center px-4 py-6 sm:p-8 flex-1 flex flex-col items-center justify-center">
             <div className="max-w-2xl mx-auto w-full">
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 sm:mb-4">
-                    High School Math Tutor
-                </h2>
-                <p className="text-sm sm:text-base lg:text-lg text-gray-400 mb-6 sm:mb-8 px-2">
-                    Upload your algebra, geometry or calculus math problem.
-                </p>
                 {errorMessage && (
                     <div className="mb-4 px-4">
                         <div className="bg-red-900/80 border border-red-700 text-red-100 px-4 py-3 rounded-lg text-sm max-w-md mx-auto">
