@@ -275,11 +275,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
         ref={inputContainerRef}
         className={`w-full border-t border-gray-700 ${
           isMobile 
-            ? 'fixed bottom-0 left-0 right-0 z-10 bg-gray-800 px-3 py-3' 
+            ? 'fixed bottom-0 left-0 right-0 z-10 bg-gray-800 px-2 py-3' 
             : 'flex-shrink-0 bg-gray-800/50 backdrop-blur-sm px-4 py-4'
         }`}
       >
-        <div className="w-full max-w-4xl mx-auto">
+        <div className={`w-full ${isMobile ? 'px-1' : 'max-w-4xl mx-auto'}`}>
           <UserInput
             isLoading={isLoading}
             onSendMessage={handleSendMessage}

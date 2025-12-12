@@ -134,7 +134,7 @@ export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, 
                 </div>
             </div>
         )}
-        <div className="flex items-center gap-2 w-full">
+        <div className="flex items-center gap-2 w-full min-w-0">
             <input
                 ref={fileInputRef}
                 type="file"
@@ -143,7 +143,7 @@ export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, 
                 className="hidden"
                 disabled={isLoading}
             />
-            <div className="flex items-center flex-1 gap-2 px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-700 rounded-full min-h-[48px] max-h-[48px]">
+            <div className="flex items-center flex-1 gap-2 px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-700 rounded-full min-h-[48px] max-h-[48px] min-w-0">
                 <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isLoading}
@@ -158,7 +158,7 @@ export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, 
                     onChange={(e) => setText(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                     placeholder={isChatActive ? "Ask a follow-up question..." : "Upload a problem to start"}
-                    className="flex-1 bg-transparent text-white placeholder-gray-400 focus:outline-none min-w-0 text-sm sm:text-base"
+                    className="flex-1 bg-transparent text-white placeholder-gray-400 focus:outline-none min-w-0 w-0 text-sm sm:text-base"
                     disabled={isLoading || !isChatActive}
                 />
                 {recognitionRef.current && (
