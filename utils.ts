@@ -20,7 +20,7 @@ export const fileToImageFile = (file: File): Promise<ImageFile> => {
 };
 
 export const formatChatForExport = (messages: Message[]): string => {
-    let textContent = "Socratic Math Tutor - Chat Export\n";
+    let textContent = "Math Tutor - Chat Export\n";
     textContent += "====================================\n\n";
 
     messages.forEach(message => {

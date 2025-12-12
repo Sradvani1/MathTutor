@@ -116,7 +116,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
     const modelPromptParts: Part[] = [
         imagePart,
         {
-            text: "Here is a math problem I'm working on. Please look at the image, identify the problem, and explain only the very first step to start solving it. Don't give me the whole answer, just the first action I should take. Frame it as a guiding question if possible."
+            text: "Here is a math problem I'm working on. Please look at the image, identify the problem, and explain how to solve it step-by-step."
         }
     ];
     

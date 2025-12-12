@@ -46,7 +46,7 @@ const App: React.FC = () => {
   // Load from local storage on initial render
   useEffect(() => {
     try {
-      const savedSession = localStorage.getItem('socraticMathSession');
+      const savedSession = localStorage.getItem('mathTutorSession');
       if (savedSession) {
         const savedMessages: Message[] = JSON.parse(savedSession);
         
@@ -82,16 +82,16 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error("Failed to load or parse session from local storage. Clearing corrupted data.", error);
-      localStorage.removeItem('socraticMathSession');
+      localStorage.removeItem('mathTutorSession');
     }
   }, []);
 
   // Save to local storage whenever messages change
   useEffect(() => {
     if (messages.length > 0) {
-      localStorage.setItem('socraticMathSession', JSON.stringify(messages));
+      localStorage.setItem('mathTutorSession', JSON.stringify(messages));
     } else {
-      localStorage.removeItem('socraticMathSession');
+      localStorage.removeItem('mathTutorSession');
     }
   }, [messages]);
   
@@ -107,7 +107,7 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'socratic-math-tutor-chat.txt';
+    link.download = 'math-tutor-chat.txt';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -118,7 +118,7 @@ const App: React.FC = () => {
       if(window.confirm("Are you sure you want to start a new session? The current chat will be cleared.")) {
           setMessages([]);
           startChat();
-          localStorage.removeItem('socraticMathSession');
+          localStorage.removeItem('mathTutorSession');
       }
   }
   
@@ -127,13 +127,8 @@ const App: React.FC = () => {
       <header className="flex-shrink-0 bg-gray-800 shadow-md px-3 py-3 sm:px-4 sm:py-4 lg:px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8 text-teal-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
-                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
               <h1 className="text-base sm:text-xl lg:text-2xl font-bold text-white truncate">
-                  Socratic Math Tutor
+                  Math Tutor
               </h1>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">

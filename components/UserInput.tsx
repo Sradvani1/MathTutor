@@ -99,16 +99,13 @@ export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, 
         {showSuggestions && !isLoading && (
             <div className="w-full max-w-4xl mx-auto">
                 <div className="flex flex-nowrap gap-1.5 sm:gap-2 justify-center px-2 overflow-x-auto">
-                    <SuggestionButton onClick={() => handleSuggestionClick("Give me a hint")}>
-                        🤔 Hint
-                    </SuggestionButton>
                     <SuggestionButton onClick={() => handleSuggestionClick("Why did we do that?")}>
                         🧐 Why?
                     </SuggestionButton>
                     <SuggestionButton onClick={() => handleSuggestionClick("What's the next step?")}>
                         ✅ Next Step
                     </SuggestionButton>
-                     <SuggestionButton onClick={() => handleSuggestionClick("Explain that differently")}>
+                    <SuggestionButton onClick={() => handleSuggestionClick("Explain that differently")}>
                         💡 Re-explain
                     </SuggestionButton>
                 </div>
