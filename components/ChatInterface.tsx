@@ -24,7 +24,48 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
+  const [inputContainerHeight, setInputContainerHeight] = useState<number>(0);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const isChatActive = messages.length > 0;
+
+  // Track if we're on mobile (screens smaller than 640px - Tailwind's sm breakpoint)
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Measure input container height on mobile and when suggestions visibility changes
+  useEffect(() => {
+    const updateInputHeight = () => {
+      if (inputContainerRef.current) {
+        const height = inputContainerRef.current.offsetHeight;
+        setInputContainerHeight(height);
+      }
+    };
+
+    updateInputHeight();
+    
+    // Update on window resize
+    window.addEventListener('resize', updateInputHeight);
+    
+    // Use ResizeObserver to track changes in input container size
+    const resizeObserver = new ResizeObserver(updateInputHeight);
+    if (inputContainerRef.current) {
+      resizeObserver.observe(inputContainerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateInputHeight);
+      resizeObserver.disconnect();
+    };
+  }, [showSuggestions, isLoading]);
 
   const scrollToBottom = () => {
     if (scrollContainerRef.current) {
@@ -111,11 +152,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
 
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 lg:px-6 lg:py-8 flex flex-col gap-4 sm:gap-5 lg:gap-6"
-        style={{ WebkitOverflowScrolling: 'touch', minHeight: 0 }}
+        style={{ 
+          WebkitOverflowScrolling: 'touch', 
+          minHeight: 0,
+          paddingBottom: isMobile ? `${inputContainerHeight}px` : undefined
+        }}
       >
         <div className="max-w-4xl mx-auto w-full flex flex-col gap-4 sm:gap-5 lg:gap-6">
           {messages.length === 0 && <WelcomeScreen onImageUpload={handleImageUpload} />}
@@ -139,7 +184,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
           <div ref={messagesEndRef} />
         </div>
       </div>
-      <div className="flex-shrink-0 px-3 py-3 sm:px-4 sm:py-4 bg-gray-800/50 backdrop-blur-sm border-t border-gray-700">
+      <div 
+        ref={inputContainerRef}
+        className={`px-3 py-3 sm:px-4 sm:py-4 border-t border-gray-700 ${
+          isMobile 
+            ? 'fixed bottom-0 left-0 right-0 z-10 bg-gray-800' 
+            : 'flex-shrink-0 bg-gray-800/50 backdrop-blur-sm'
+        }`}
+      >
         <UserInput
           isLoading={isLoading}
           onSendMessage={handleSendMessage}

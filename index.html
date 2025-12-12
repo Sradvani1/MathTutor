@@ -60,13 +60,37 @@
 
   <script>
     // Set CSS variable for actual viewport height (handles mobile address bars)
+    // Store initial height and only update on orientation change to prevent keyboard resize issues
+    let initialHeight = window.innerHeight;
+    let lastWidth = window.innerWidth;
+    
     function setViewportHeight() {
-      const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--viewport-height', `${window.innerHeight}px`);
+      const currentWidth = window.innerWidth;
+      const currentHeight = window.innerHeight;
+      
+      // Only update if width changed (orientation change) or if height increased (keyboard closed)
+      // Don't update if height decreased (keyboard opened) unless width changed
+      if (currentWidth !== lastWidth || currentHeight >= initialHeight) {
+        initialHeight = currentHeight;
+        document.documentElement.style.setProperty('--viewport-height', `${currentHeight}px`);
+      }
+      lastWidth = currentWidth;
     }
+    
     setViewportHeight();
+    
+    // Use orientationchange for reliable mobile orientation detection
+    window.addEventListener('orientationchange', () => {
+      // Delay to get accurate dimensions after orientation change
+      setTimeout(() => {
+        initialHeight = window.innerHeight;
+        lastWidth = window.innerWidth;
+        document.documentElement.style.setProperty('--viewport-height', `${window.innerHeight}px`);
+      }, 100);
+    });
+    
+    // Use resize as backup, but with the same logic to prevent keyboard issues
     window.addEventListener('resize', setViewportHeight);
-    window.addEventListener('orientationchange', setViewportHeight);
   </script>
 
   <!-- KaTeX CSS -->
