@@ -1,5 +1,5 @@
 
-import React from 'react';
+import { type FC } from 'react';
 import { MathRenderer } from './MathRenderer';
 
 interface GlossaryModalProps {
@@ -9,7 +9,7 @@ interface GlossaryModalProps {
     onClose: () => void;
 }
 
-export const GlossaryModal: React.FC<GlossaryModalProps> = ({ term, definition, isLoading, onClose }) => {
+export const GlossaryModal: FC<GlossaryModalProps> = ({ term, definition, isLoading, onClose }) => {
     if (!term) return null;
 
     return (

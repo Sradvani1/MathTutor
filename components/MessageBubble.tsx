@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import { useState, type FC } from 'react';
 import { Message } from '../types';
 import { MathRenderer } from './MathRenderer';
 import { ImagePreviewModal } from './ImagePreviewModal';
@@ -9,11 +9,11 @@ interface MessageBubbleProps {
   onGlossaryClick: (term: string) => void;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onGlossaryClick }) => {
+export const MessageBubble: FC<MessageBubbleProps> = ({ message, onGlossaryClick }) => {
   const isUser = message.role === 'user';
   const [isCopied, setIsCopied] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const fullText = message.parts.map(p => 'text' in p ? p.text : '').join('\n');
+  const fullText = (message.parts ?? []).map(p => 'text' in p ? p.text : '').join('\n');
 
   const handleCopy = () => {
     if (navigator.clipboard && fullText) {
@@ -40,7 +40,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onGlossar
             : 'bg-gray-700 text-gray-200 rounded-bl-none max-w-[85%] sm:max-w-lg lg:max-w-xl'
         }`}
       >
-        {message.parts.map((part, index) => {
+        {(message.parts ?? []).map((part, index) => {
              if ('inlineData' in part && part.inlineData) {
                 const dataUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                 return (

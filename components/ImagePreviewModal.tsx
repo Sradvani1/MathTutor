@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import { useEffect, type FC } from 'react';
 
 interface ImagePreviewModalProps {
   imageUrl: string;
@@ -7,7 +7,7 @@ interface ImagePreviewModalProps {
   onClose: () => void;
 }
 
-export const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ imageUrl, isOpen, onClose }) => {
+export const ImagePreviewModal: FC<ImagePreviewModalProps> = ({ imageUrl, isOpen, onClose }) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {

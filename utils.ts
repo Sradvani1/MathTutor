@@ -57,10 +57,6 @@ export const fileToImageFile = (file: File): Promise<ImageFile> => {
       reject(new Error(validationError.message));
       return;
     }
-
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'utils.ts:4',message:'fileToImageFile entry',data:{fileName:file.name,fileSize:file.size,fileType:file.type},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     
     const reader = new FileReader();
     
@@ -88,10 +84,6 @@ export const fileToImageFile = (file: File): Promise<ImageFile> => {
           return;
         }
         
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'utils.ts:10',message:'base64 encoding success',data:{base64Length:base64Data.length,estimatedSizeMB:(base64Data.length*3/4/1024/1024).toFixed(2)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
-        
         resolve({
           data: base64Data,
           mimeType: file.type || 'image/jpeg', // Fallback to jpeg if type is missing
@@ -104,9 +96,7 @@ export const fileToImageFile = (file: File): Promise<ImageFile> => {
     
     reader.onerror = (error) => {
       clearTimeout(timeout);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'utils.ts:16',message:'FileReader error',data:{error:error.toString()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
+
       reject(new Error('Failed to read image file. The file may be corrupted or in an unsupported format.'));
     };
     
@@ -129,11 +119,11 @@ export const formatChatForExport = (messages: Message[]): string => {
     textContent += "====================================\n\n";
 
     messages.forEach(message => {
-        const role = message.role.charAt(0).toUpperCase() + message.role.slice(1);
+        const role = message.role ? message.role.charAt(0).toUpperCase() + message.role.slice(1) : 'User';
         textContent += `[${role}]:\n`;
-        
+
         let hasImage = false;
-        message.parts.forEach(part => {
+        message.parts?.forEach(part => {
             if ('text' in part && part.text) {
                 textContent += part.text + "\n";
             } else if ('inlineData' in part) {

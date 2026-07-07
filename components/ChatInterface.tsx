@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type FC, type Dispatch, type SetStateAction } from 'react';
 import { Message, ImageFile } from '../types';
 import { sendMessage, getGlossaryDefinition } from '../services/geminiService';
 import { MessageBubble } from './MessageBubble';
@@ -11,10 +11,10 @@ import { GlossaryModal } from './GlossaryModal';
 interface ChatInterfaceProps {
   messages: Message[];
   addMessage: (role: 'user' | 'model', parts: Part[], rawParts?: Part[]) => void;
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  setMessages: Dispatch<SetStateAction<Message[]>>;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, setMessages }) => {
+const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage, setMessages }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
   
@@ -46,9 +46,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
     const updateInputHeight = () => {
       if (inputContainerRef.current) {
         const height = inputContainerRef.current.offsetHeight;
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:46',message:'updateInputHeight called',data:{newHeight:height,oldHeight:inputContainerHeight,isMobile:window.innerWidth<640,showSuggestions,isLoading},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-        // #endregion
+
         setInputContainerHeight(height);
       }
     };
@@ -105,10 +103,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
   };
 
   const handleImageUpload = async (imageFile: ImageFile) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:104',message:'handleImageUpload entry',data:{mimeType:imageFile.mimeType,dataLength:imageFile.data.length,estimatedSizeMB:(imageFile.data.length*3/4/1024/1024).toFixed(2),isMobile:window.innerWidth<640,windowWidth:window.innerWidth,inputContainerHeight},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
-    
     // Use a flag to track if we should show error message
     let shouldShowErrorMessage = true;
     
@@ -134,11 +128,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
       
       // This is what will be displayed in the UI for the user's message
       const uiMessageParts: Part[] = [imagePart];
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:127',message:'before addMessage',data:{hasImagePart:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
-      
+
       // Add message immediately so image displays right away
       try {
         addMessage('user', uiMessageParts, modelPromptParts); // Show only image in UI, but save full prompt
@@ -148,19 +138,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
         shouldShowErrorMessage = false;
         throw addMessageError;
       }
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:128',message:'after addMessage, before API call',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
-      
+
       await getAIResponse(modelPromptParts);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:129',message:'after API call success',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
+      
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:130',message:'handleImageUpload error caught',data:{errorMessage:error instanceof Error?error.message:String(error),errorName:error instanceof Error?error.name:'Unknown',errorStack:error instanceof Error?error.stack?.substring(0,500):undefined,isMobile:window.innerWidth<640},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
       console.error("Error handling image upload:", error);
       
       // Get user-friendly error message
@@ -179,15 +160,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
               if (shouldShowErrorMessage) {
                 addMessage('model', [{ text: errorMessage }]);
               }
-              // #region agent log
-              fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:148',message:'error recovery state updates completed',data:{isMobile:window.innerWidth<640},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-              // #endregion
               resolve();
             } catch (recoveryError) {
               console.error("Error during error recovery:", recoveryError);
-              // #region agent log
-              fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:149',message:'error recovery failed - state update error',data:{recoveryError:recoveryError instanceof Error?recoveryError.message:String(recoveryError),isMobile:window.innerWidth<640},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-              // #endregion
+
               resolve(); // Don't throw, just log
             }
           });
@@ -213,22 +189,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
   };
   
   const getAIResponse = async (prompt: Part[]) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:144',message:'getAIResponse entry',data:{hasImage:prompt.some(p=>'inlineData' in p)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
     setIsLoading(true);
     setShowSuggestions(false);
     
     try {
         const responseText = await sendMessage(prompt);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:149',message:'sendMessage success',data:{responseLength:responseText.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-        // #endregion
+
         addMessage('model', [{ text: responseText }]);
     } catch (error) {
-         // #region agent log
-         fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatInterface.tsx:152',message:'getAIResponse error caught',data:{errorMessage:error instanceof Error?error.message:String(error),errorName:error instanceof Error?error.name:'Unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-         // #endregion
          console.error("Error getting response:", error);
          addMessage('model', [{ text: "I encountered an error. Could you please rephrase or try again?" }]);
     } finally {
@@ -236,7 +204,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, addMessage, set
         setShowSuggestions(true);
     }
   }
-
 
   return (
     <div className="flex flex-col h-full relative">

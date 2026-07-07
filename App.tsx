@@ -1,50 +1,19 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import ChatInterface from './components/ChatInterface';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Message } from './types';
 import { startChat } from './services/geminiService';
 import { formatChatForExport } from './utils';
 import { Part, Content } from '@google/genai';
 import { useScript } from './hooks/useScript';
 
-const App: React.FC = () => {
+const App: FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   
   // Dynamically load the KaTeX script to avoid quirks mode warnings.
   // The MathRenderer component will re-render and use window.katex once it's available.
   useScript('https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js');
-
-  // Global error handler for better debugging
-  useEffect(() => {
-    const handleGlobalError = (event: ErrorEvent | PromiseRejectionEvent) => {
-      let error;
-      if (event instanceof ErrorEvent) {
-        error = {
-          message: event.message,
-          filename: event.filename,
-          lineno: event.lineno,
-          colno: event.colno,
-          error: event.error,
-        };
-      } else {
-        error = {
-          reason: event.reason,
-        };
-      }
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:19',message:'global error caught',data:{errorType:event instanceof ErrorEvent?'ErrorEvent':'PromiseRejectionEvent',error:JSON.stringify(error).substring(0,500),isMobile:window.innerWidth<640},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
-      console.error("A global error was caught, preventing a crash:", error);
-    };
-
-    window.addEventListener('error', handleGlobalError);
-    window.addEventListener('unhandledrejection', handleGlobalError);
-
-    return () => {
-      window.removeEventListener('error', handleGlobalError);
-      window.removeEventListener('unhandledrejection', handleGlobalError);
-    };
-  }, []);
 
   // Load from local storage on initial render
   useEffect(() => {
@@ -157,7 +126,9 @@ const App: React.FC = () => {
         </div>
       </header>
       <main className="flex-1 flex flex-col overflow-hidden min-h-0">
-        <ChatInterface messages={messages} addMessage={addMessage} setMessages={setMessages} />
+        <ErrorBoundary>
+          <ChatInterface messages={messages} addMessage={addMessage} setMessages={setMessages} />
+        </ErrorBoundary>
       </main>
     </div>
   );

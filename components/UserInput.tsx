@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type FC, type ReactNode, type ChangeEvent } from 'react';
 import { ImageFile } from '../types';
 import { fileToImageFile } from '../utils';
 
@@ -11,7 +11,7 @@ interface UserInputProps {
   isChatActive: boolean;
 }
 
-const SuggestionButton: React.FC<{ onClick: () => void, children: React.ReactNode }> = ({ onClick, children }) => (
+const SuggestionButton: FC<{ onClick: () => void, children: ReactNode }> = ({ onClick, children }) => (
     <button
         onClick={onClick}
         className="px-2 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-gray-700 hover:bg-gray-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 whitespace-nowrap flex-shrink-0"
@@ -21,7 +21,7 @@ const SuggestionButton: React.FC<{ onClick: () => void, children: React.ReactNod
 );
 
 
-export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, onImageUpload, showSuggestions, isChatActive }) => {
+export const UserInput: FC<UserInputProps> = ({ isLoading, onSendMessage, onImageUpload, showSuggestions, isChatActive }) => {
   const [text, setText] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -67,24 +67,15 @@ export const UserInput: React.FC<UserInputProps> = ({ isLoading, onSendMessage, 
     onSendMessage(suggestion);
   }
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     setErrorMessage(null); // Clear previous errors
     
     if (file) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserInput.tsx:69',message:'file selected',data:{fileName:file.name,fileSize:file.size,fileType:file.type,sizeMB:(file.size/1024/1024).toFixed(2),isMobile:window.innerWidth<640,userAgent:navigator.userAgent.substring(0,100)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       try {
         const imageFile = await fileToImageFile(file);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserInput.tsx:73',message:'fileToImageFile success, calling onImageUpload',data:{mimeType:imageFile.mimeType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
         onImageUpload(imageFile);
       } catch (error) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/721015d6-5fec-4368-8083-18fa7e6fdce2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserInput.tsx:75',message:'fileToImageFile error',data:{errorMessage:error instanceof Error?error.message:String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
         console.error("Error processing file:", error);
         const errorMsg = error instanceof Error ? error.message : "Failed to process image. Please try again.";
         setErrorMessage(errorMsg);

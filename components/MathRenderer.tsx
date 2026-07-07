@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, type FC, memo } from 'react';
 
 // Make TypeScript aware of the global `katex` object attached to the window
 // by the script loaded in index.html.
@@ -10,7 +10,7 @@ declare global {
     }
 }
 
-export const MathRenderer: React.FC<{ text: string; onGlossaryClick: (term: string) => void; }> = React.memo(({ text, onGlossaryClick }) => {
+export const MathRenderer: FC<{ text: string; onGlossaryClick: (term: string) => void; }> = memo(({ text, onGlossaryClick }) => {
     const [fontsReady, setFontsReady] = useState(false);
     
     // Ensure fonts are loaded before rendering to prevent black spots
