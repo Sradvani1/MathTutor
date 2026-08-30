@@ -1,6 +1,6 @@
 import { GoogleGenAI, type Content, type Part } from '@google/genai';
-import { errorResponse, parseHistory, parseJsonBody, parsePart } from './shared';
-import { SUBJECTS, type Subject } from '../types';
+import { errorResponse, parseHistory, parseJsonBody, parsePart } from '../lib/api.js';
+import { SUBJECTS, type Subject } from '../types.js';
 
 export const maxDuration = 60;
 
