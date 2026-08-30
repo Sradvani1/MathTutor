@@ -86,19 +86,48 @@ export const parseHistory = (value: unknown): ApiMessage[] | null => {
   return history.length % 2 === 0 ? history : null;
 };
 
-export const parseJsonBody = async (request: Request) => {
-  const reader = request.body?.getReader();
-  if (!reader) return null;
+const isWebStream = (value: unknown): value is ReadableStream<Uint8Array> =>
+  Boolean(value && typeof value === 'object' && 'getReader' in value && typeof value.getReader === 'function');
+
+const isAsyncIterable = (value: unknown): value is AsyncIterable<Uint8Array | string> =>
+  Boolean(value && typeof value === 'object' && Symbol.asyncIterator in value);
+
+export const parseJsonBody = async (request: { body?: unknown }) => {
+  const requestBody = request.body;
+  if (!requestBody) return null;
+
+  // Vercel's Node runtime parses JSON before invoking the handler.
+  if (!isWebStream(requestBody) && !isAsyncIterable(requestBody)) {
+    try {
+      return JSON.stringify(requestBody).length <= MAX_REQUEST_BYTES ? requestBody : null;
+    } catch {
+      return null;
+    }
+  }
 
   const chunks: Uint8Array[] = [];
   let size = 0;
   try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      size += value.byteLength;
-      if (size > MAX_REQUEST_BYTES) return null;
-      chunks.push(value);
+    if (isWebStream(requestBody)) {
+      const reader = requestBody.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          size += value.byteLength;
+          if (size > MAX_REQUEST_BYTES) return null;
+          chunks.push(value);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    } else {
+      for await (const chunk of requestBody) {
+        const bytes = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
+        size += bytes.byteLength;
+        if (size > MAX_REQUEST_BYTES) return null;
+        chunks.push(bytes);
+      }
     }
 
     const body = new Uint8Array(size);
@@ -110,7 +139,5 @@ export const parseJsonBody = async (request: Request) => {
     return JSON.parse(new TextDecoder().decode(body)) as unknown;
   } catch {
     return null;
-  } finally {
-    reader.releaseLock();
   }
 };

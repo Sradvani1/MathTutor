@@ -54,7 +54,7 @@ export default async function handler(request: Request) {
   try {
     const ai = new GoogleGenAI({ apiKey });
     const chat = ai.chats.create({
-      model: 'gemini-2.5-pro',
+      model: 'gemini-3.7-flash',
       history: history as Content[],
       config: { systemInstruction: `${BASE_SYSTEM_INSTRUCTION}\n\n${SUBJECT_INSTRUCTIONS[body.subject]}`, thinkingConfig: { thinkingBudget: 32768 } },
     });
