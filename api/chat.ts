@@ -1,12 +1,5 @@
 import { GoogleGenAI, type Content, type Part } from '@google/genai';
-import {
-  checkRateLimit,
-  errorResponse,
-  getClientIp,
-  parseHistory,
-  parseJsonBody,
-  parsePart,
-} from './shared';
+import { errorResponse, parseHistory, parseJsonBody, parsePart } from './shared';
 
 export const maxDuration = 60;
 
@@ -14,15 +7,6 @@ const TUTOR_SYSTEM_INSTRUCTION = "You are a high school math tutor specializing 
 
 export default async function handler(request: Request) {
   if (request.method !== 'POST') return errorResponse('Method not allowed.', 405);
-
-  let rateLimit;
-  try {
-    rateLimit = await checkRateLimit('chat', getClientIp(request));
-  } catch {
-    return errorResponse('The tutor is temporarily unavailable.', 503);
-  }
-  if (!rateLimit.configured) return errorResponse('The tutor is temporarily unavailable.', 503);
-  if (!rateLimit.success) return errorResponse('Too many requests. Please wait a few minutes and try again.', 429);
 
   const body = await parseJsonBody(request);
   if (!body || typeof body !== 'object' || !('history' in body) || !('message' in body)) {

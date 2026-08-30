@@ -14,8 +14,6 @@
   },
   "dependencies": {
     "@google/genai": "^1.26.0",
-    "@upstash/ratelimit": "^2.0.6",
-    "@upstash/redis": "^1.35.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

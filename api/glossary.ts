@@ -1,19 +1,10 @@
 import { GoogleGenAI } from '@google/genai';
-import { checkRateLimit, errorResponse, getClientIp, parseJsonBody } from './shared';
+import { errorResponse, parseJsonBody } from './shared';
 
 export const maxDuration = 30;
 
 export default async function handler(request: Request) {
   if (request.method !== 'POST') return errorResponse('Method not allowed.', 405);
-
-  let rateLimit;
-  try {
-    rateLimit = await checkRateLimit('glossary', getClientIp(request));
-  } catch {
-    return errorResponse('The tutor is temporarily unavailable.', 503);
-  }
-  if (!rateLimit.configured) return errorResponse('The tutor is temporarily unavailable.', 503);
-  if (!rateLimit.success) return errorResponse('Too many glossary requests. Please wait a few minutes and try again.', 429);
 
   const body = await parseJsonBody(request);
   const term = body && typeof body === 'object' && 'term' in body && typeof body.term === 'string' ? body.term.trim() : '';

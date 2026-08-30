@@ -1,6 +1,3 @@
-import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
-
 export const MAX_IMAGE_BYTES = 2.5 * 1024 * 1024;
 export const MAX_HISTORY_MESSAGES = 20;
 export const MAX_HISTORY_TEXT_BYTES = 30_000;
@@ -13,28 +10,8 @@ type ImagePart = { inlineData: { mimeType: string; data: string } };
 export type ApiPart = TextPart | ImagePart;
 export type ApiMessage = { role: 'user' | 'model'; parts: ApiPart[] };
 
-const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-const redis = redisUrl && redisToken ? new Redis({ url: redisUrl, token: redisToken }) : null;
-
-const chatRateLimit = redis ? new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(20, '10 m') }) : null;
-const glossaryRateLimit = redis ? new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(60, '10 m') }) : null;
-
 export const errorResponse = (error: string, status: number) =>
   Response.json({ error }, { status, headers: { 'Cache-Control': 'no-store' } });
-
-export const getClientIp = (request: Request) =>
-  request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-
-export const checkRateLimit = async (kind: 'chat' | 'glossary', ip: string) => {
-  const rateLimit = kind === 'chat' ? chatRateLimit : glossaryRateLimit;
-  if (!rateLimit) {
-    return { configured: false, success: false };
-  }
-
-  const result = await rateLimit.limit(`${kind}:${ip}`);
-  return { configured: true, success: result.success, reset: result.reset };
-};
 
 const decodedImageSize = (data: string) => Math.floor((data.length * 3) / 4) - (data.endsWith('==') ? 2 : data.endsWith('=') ? 1 : 0);
 
