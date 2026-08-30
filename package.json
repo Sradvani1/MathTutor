@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npx vercel dev",
+    "dev:vite": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .ts,.tsx",
@@ -13,6 +14,8 @@
   },
   "dependencies": {
     "@google/genai": "^1.26.0",
+    "@upstash/ratelimit": "^2.0.6",
+    "@upstash/redis": "^1.35.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

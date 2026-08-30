@@ -1,12 +1,15 @@
 
-import { Part, Content } from '@google/genai';
-
 export type Role = 'user' | 'model';
 
-// Use the SDK's Content type as the base for our message, adding a unique ID.
-export type Message = Content & {
+export type MessagePart =
+  | { text: string }
+  | { inlineData: { mimeType: string; data: string } };
+
+export type Message = {
   id: string;
-  rawParts?: Part[]; // The full data sent to the model, if different from what's displayed.
+  role: Role;
+  parts: MessagePart[];
+  rawParts?: MessagePart[];
 };
 
 export interface ImageFile {

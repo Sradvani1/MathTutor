@@ -31,13 +31,11 @@ export const MathRenderer: FC<{ text: string; onGlossaryClick: (term: string) =>
         }
     }, []);
     
-    // A fallback to prevent a crash if the KaTeX script fails to load.
-    if (typeof window === 'undefined' || !window.katex) {
-        console.warn("KaTeX script not loaded. Rendering plain text.");
-        return <div className="whitespace-pre-wrap">{text}</div>;
-    }
+    const katex = typeof window === 'undefined' ? null : window.katex;
 
     const renderedParts = useMemo(() => {
+        if (!fontsReady || !katex) return [<span key="plain-text">{text}</span>];
+
         // Regex to find all math expressions (inline and block) and glossary terms.
         const regex = /(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$|\[glossary:(.*?)\])/g;
         const parts = text.split(regex);
@@ -48,14 +46,14 @@ export const MathRenderer: FC<{ text: string; onGlossaryClick: (term: string) =>
             // Handle Display Math: $$...$$
             if (part.startsWith('$$') && part.endsWith('$$')) {
                 const latex = part.slice(2, -2).trim();
-                const html = window.katex.renderToString(latex, { displayMode: true, throwOnError: false, errorColor: '#ef4444' });
+                const html = katex.renderToString(latex, { displayMode: true, throwOnError: false, errorColor: '#ef4444' });
                 return <div key={index} className="overflow-x-auto max-w-full" dangerouslySetInnerHTML={{ __html: html }} />;
             }
 
             // Handle Inline Math: $...$
             if (part.startsWith('$') && part.endsWith('$')) {
                 const latex = part.slice(1, -1).trim();
-                const html = window.katex.renderToString(latex, { displayMode: false, throwOnError: false, errorColor: '#ef4444' });
+                const html = katex.renderToString(latex, { displayMode: false, throwOnError: false, errorColor: '#ef4444' });
                 return <span key={index} className="inline-block align-middle max-w-full overflow-x-auto" dangerouslySetInnerHTML={{ __html: html }} />;
             }
 
@@ -84,7 +82,7 @@ export const MathRenderer: FC<{ text: string; onGlossaryClick: (term: string) =>
             // Render regular text.
             return <span key={index}>{part}</span>;
         });
-    }, [text, onGlossaryClick, fontsReady]);
+    }, [text, onGlossaryClick, fontsReady, katex]);
 
     return <div className="whitespace-pre-wrap break-words overflow-hidden">{renderedParts}</div>;
 });

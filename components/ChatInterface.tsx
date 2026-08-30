@@ -1,26 +1,25 @@
 
-import { useState, useRef, useEffect, type FC, type Dispatch, type SetStateAction } from 'react';
-import { Message, ImageFile } from '../types';
-import { sendMessage, getGlossaryDefinition } from '../services/geminiService';
+import { useState, useRef, useEffect, type FC } from 'react';
+import { Message, ImageFile, MessagePart } from '../types';
+import { sendMessage, getGlossaryDefinition, IMAGE_HISTORY_TEXT } from '../services/geminiService';
 import { MessageBubble } from './MessageBubble';
 import { UserInput } from './UserInput';
 import { WelcomeScreen } from './WelcomeScreen';
-import { Part } from '@google/genai';
 import { GlossaryModal } from './GlossaryModal';
 
 interface ChatInterfaceProps {
   messages: Message[];
-  addMessage: (role: 'user' | 'model', parts: Part[], rawParts?: Part[]) => void;
-  setMessages: Dispatch<SetStateAction<Message[]>>;
+  addMessage: (role: 'user' | 'model', parts: MessagePart[], rawParts?: MessagePart[]) => void;
 }
 
-const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage, setMessages }) => {
+const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
   
   const [glossaryTerm, setGlossaryTerm] = useState<string | null>(null);
   const [glossaryDefinition, setGlossaryDefinition] = useState<string>('');
   const [isGlossaryLoading, setIsGlossaryLoading] = useState<boolean>(false);
+  const glossaryRequestRef = useRef(0);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -90,14 +89,23 @@ const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage, setMessag
   }, [messages, isLoading]);
   
   const handleOpenGlossary = async (term: string) => {
+      const requestId = ++glossaryRequestRef.current;
       setGlossaryTerm(term);
       setIsGlossaryLoading(true);
-      const definition = await getGlossaryDefinition(term);
-      setGlossaryDefinition(definition);
-      setIsGlossaryLoading(false);
+      try {
+        const definition = await getGlossaryDefinition(term);
+        if (glossaryRequestRef.current === requestId) setGlossaryDefinition(definition);
+      } catch (error) {
+        if (glossaryRequestRef.current === requestId) {
+          setGlossaryDefinition(error instanceof Error ? error.message : "Sorry, I couldn't fetch a definition right now.");
+        }
+      } finally {
+        if (glossaryRequestRef.current === requestId) setIsGlossaryLoading(false);
+      }
   };
   
   const handleCloseGlossary = () => {
+      glossaryRequestRef.current += 1;
       setGlossaryTerm(null);
       setGlossaryDefinition('');
   };
@@ -111,27 +119,18 @@ const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage, setMessag
       setIsLoading(true);
       setShowSuggestions(false);
 
-      const imagePart: Part = {
+      const imagePart: MessagePart = {
           inlineData: {
               mimeType: imageFile.mimeType || 'image/jpeg', // Fallback
               data: imageFile.data,
           },
       };
       
-      // This is the full prompt that will be sent to the AI model
-      const modelPromptParts: Part[] = [
-          imagePart,
-          {
-              text: "Here is a math problem I'm working on. Please look at the image, identify the problem, and explain how to solve it step-by-step."
-          }
-      ];
-      
-      // This is what will be displayed in the UI for the user's message
-      const uiMessageParts: Part[] = [imagePart];
+      const imageMessageParts: MessagePart[] = [imagePart];
 
       // Add message immediately so image displays right away
       try {
-        addMessage('user', uiMessageParts, modelPromptParts); // Show only image in UI, but save full prompt
+        addMessage('user', imageMessageParts, [{ text: IMAGE_HISTORY_TEXT }]);
       } catch (addMessageError) {
         console.error("Error adding message:", addMessageError);
         // Don't show error message if we couldn't even add the user message
@@ -139,7 +138,7 @@ const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage, setMessag
         throw addMessageError;
       }
 
-      await getAIResponse(modelPromptParts);
+      await getAIResponse(imageMessageParts);
       
     } catch (error) {
       console.error("Error handling image upload:", error);
@@ -183,22 +182,22 @@ const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage, setMessag
 
   const handleSendMessage = async (text: string) => {
     if (!text.trim() || !isChatActive) return;
-    const parts: Part[] = [{ text }];
+    const parts: MessagePart[] = [{ text }];
     addMessage('user', parts);
     await getAIResponse(parts);
   };
   
-  const getAIResponse = async (prompt: Part[]) => {
+  const getAIResponse = async (prompt: MessagePart[]) => {
     setIsLoading(true);
     setShowSuggestions(false);
     
     try {
-        const responseText = await sendMessage(prompt);
+        const responseText = await sendMessage(prompt, messages);
 
         addMessage('model', [{ text: responseText }]);
     } catch (error) {
          console.error("Error getting response:", error);
-         addMessage('model', [{ text: "I encountered an error. Could you please rephrase or try again?" }]);
+          addMessage('model', [{ text: error instanceof Error ? error.message : 'I encountered an error. Could you please rephrase or try again?' }]);
     } finally {
         setIsLoading(false);
         setShowSuggestions(true);

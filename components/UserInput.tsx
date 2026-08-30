@@ -24,6 +24,9 @@ const SuggestionButton: FC<{ onClick: () => void, children: ReactNode }> = ({ on
 export const UserInput: FC<UserInputProps> = ({ isLoading, onSendMessage, onImageUpload, showSuggestions, isChatActive }) => {
   const [text, setText] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [speechSupported] = useState(
+    () => typeof window !== 'undefined' && Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -152,7 +155,7 @@ export const UserInput: FC<UserInputProps> = ({ isLoading, onSendMessage, onImag
                     className="flex-1 bg-transparent text-white placeholder-gray-400 focus:outline-none min-w-0 w-0 text-sm sm:text-base"
                     disabled={isLoading || !isChatActive}
                 />
-                {recognitionRef.current && (
+                {speechSupported && (
                   <button
                     onClick={handleMicClick}
                     disabled={isLoading || !isChatActive}

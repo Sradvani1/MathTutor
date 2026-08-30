@@ -2,72 +2,73 @@
 import { useState, useEffect, type FC } from 'react';
 import ChatInterface from './components/ChatInterface';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { Message } from './types';
-import { startChat } from './services/geminiService';
+import { Message, MessagePart } from './types';
 import { formatChatForExport } from './utils';
-import { Part, Content } from '@google/genai';
 import { useScript } from './hooks/useScript';
 
+const isMessagePart = (part: unknown): part is MessagePart => {
+  if (!part || typeof part !== 'object') return false;
+  if ('text' in part) return typeof part.text === 'string';
+  return Boolean(
+    'inlineData' in part &&
+      part.inlineData &&
+      typeof part.inlineData === 'object' &&
+      'data' in part.inlineData &&
+      'mimeType' in part.inlineData &&
+      typeof part.inlineData.data === 'string' &&
+      typeof part.inlineData.mimeType === 'string'
+  );
+};
+
+const loadSavedMessages = (): Message[] => {
+  try {
+    const savedSession = localStorage.getItem('mathTutorSession');
+    if (!savedSession) return [];
+    const savedMessages: unknown = JSON.parse(savedSession);
+    if (!Array.isArray(savedMessages)) return [];
+
+    return savedMessages.filter((message): message is Message =>
+      Boolean(
+        message &&
+          typeof message === 'object' &&
+          'id' in message &&
+          typeof message.id === 'string' &&
+          'role' in message &&
+          (message.role === 'user' || message.role === 'model') &&
+          'parts' in message &&
+          Array.isArray(message.parts) &&
+          message.parts.every(isMessagePart) &&
+          (!('rawParts' in message) || message.rawParts === undefined || (Array.isArray(message.rawParts) && message.rawParts.every(isMessagePart)))
+      )
+    );
+  } catch (error) {
+    console.error('Failed to load chat session:', error);
+    localStorage.removeItem('mathTutorSession');
+    return [];
+  }
+};
+
 const App: FC = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(loadSavedMessages);
   
   // Dynamically load the KaTeX script to avoid quirks mode warnings.
   // The MathRenderer component will re-render and use window.katex once it's available.
   useScript('https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js');
 
-  // Load from local storage on initial render
-  useEffect(() => {
-    try {
-      const savedSession = localStorage.getItem('mathTutorSession');
-      if (savedSession) {
-        const savedMessages: Message[] = JSON.parse(savedSession);
-        
-        if (Array.isArray(savedMessages) && savedMessages.length > 0) {
-          
-          const validMessages = savedMessages.filter(msg => {
-              if (!msg || (msg.role !== 'user' && msg.role !== 'model') || !Array.isArray(msg.parts)) {
-                  console.warn("Filtering out invalid message from localStorage:", msg);
-                  return false;
-              }
-              const partsToValidate = msg.rawParts || msg.parts;
-              if (!Array.isArray(partsToValidate)) {
-                  console.warn("Filtering out message with invalid parts from localStorage:", msg);
-                  return false;
-              }
-              
-              return partsToValidate.every(part => {
-                  if (!part) return false;
-                  const hasText = 'text' in part && typeof (part as any).text === 'string';
-                  const hasInlineData = 'inlineData' in part && 
-                                        part.inlineData && 
-                                        typeof part.inlineData.data === 'string' &&
-                                        typeof part.inlineData.mimeType === 'string';
-                  return hasText || hasInlineData;
-              });
-          });
-          
-          setMessages(validMessages);
-
-          const history: Content[] = validMessages.map(({ role, parts, rawParts }) => ({ role, parts: rawParts || parts }));
-          startChat(history);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load or parse session from local storage. Clearing corrupted data.", error);
-      localStorage.removeItem('mathTutorSession');
-    }
-  }, []);
-
   // Save to local storage whenever messages change
   useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem('mathTutorSession', JSON.stringify(messages));
-    } else {
-      localStorage.removeItem('mathTutorSession');
+    try {
+      if (messages.length > 0) {
+        localStorage.setItem('mathTutorSession', JSON.stringify(messages));
+      } else {
+        localStorage.removeItem('mathTutorSession');
+      }
+    } catch (error) {
+      console.error('Failed to save chat session:', error);
     }
   }, [messages]);
   
-  const addMessage = (role: 'user' | 'model', parts: Part[], rawParts?: Part[]) => {
+  const addMessage = (role: 'user' | 'model', parts: MessagePart[], rawParts?: MessagePart[]) => {
     const newMessage: Message = { id: Date.now().toString(), role, parts, rawParts };
     setMessages(prev => [...prev, newMessage]);
   };
@@ -87,10 +88,9 @@ const App: FC = () => {
   };
   
   const handleResetChat = () => {
-      if(window.confirm("Are you sure you want to start a new session? The current chat will be cleared.")) {
-          setMessages([]);
-          startChat();
-          localStorage.removeItem('mathTutorSession');
+       if(window.confirm("Are you sure you want to start a new session? The current chat will be cleared.")) {
+           setMessages([]);
+           localStorage.removeItem('mathTutorSession');
       }
   }
   
@@ -127,7 +127,7 @@ const App: FC = () => {
       </header>
       <main className="flex-1 flex flex-col overflow-hidden min-h-0">
         <ErrorBoundary>
-          <ChatInterface messages={messages} addMessage={addMessage} setMessages={setMessages} />
+          <ChatInterface messages={messages} addMessage={addMessage} />
         </ErrorBoundary>
       </main>
     </div>

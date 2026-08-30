@@ -1,8 +1,8 @@
 
 import { ImageFile, Message } from './types';
 
-// Gemini API limits: 7MB per image for inline data, 20MB total request
-const MAX_IMAGE_SIZE_MB = 7;
+// Base64-encoded images must fit within Vercel Functions' request-body limit.
+const MAX_IMAGE_SIZE_MB = 2.5;
 const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
 
 // Supported image formats for Gemini API
@@ -94,7 +94,7 @@ export const fileToImageFile = (file: File): Promise<ImageFile> => {
       }
     };
     
-    reader.onerror = (error) => {
+    reader.onerror = () => {
       clearTimeout(timeout);
 
       reject(new Error('Failed to read image file. The file may be corrupted or in an unsupported format.'));
