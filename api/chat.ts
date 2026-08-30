@@ -56,7 +56,10 @@ export default async function handler(request: Request) {
     const chat = ai.chats.create({
       model: 'gemini-3.7-flash',
       history: history as Content[],
-      config: { systemInstruction: `${BASE_SYSTEM_INSTRUCTION}\n\n${SUBJECT_INSTRUCTIONS[body.subject]}`, thinkingConfig: { thinkingBudget: 32768 } },
+      config: {
+        systemInstruction: `${BASE_SYSTEM_INSTRUCTION}\n\n${SUBJECT_INSTRUCTIONS[body.subject]}`,
+        thinkingConfig: { thinkingBudget: -1 },
+      },
     });
     const result = await chat.sendMessage({ message: prompt });
     if (!result.text) return errorResponse("The tutor couldn't produce a response. Please try again.", 502);
