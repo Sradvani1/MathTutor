@@ -1,8 +1,8 @@
 
-import { useState, useEffect, type FC } from 'react';
+import { useState, useEffect, useRef, type ChangeEvent, type FC } from 'react';
 import ChatInterface from './components/ChatInterface';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { Message, MessagePart } from './types';
+import { Message, MessagePart, Subject, SUBJECTS } from './types';
 import { formatChatForExport } from './utils';
 import { useScript } from './hooks/useScript';
 
@@ -20,36 +20,56 @@ const isMessagePart = (part: unknown): part is MessagePart => {
   );
 };
 
-const loadSavedMessages = (): Message[] => {
+const isSubject = (value: unknown): value is Subject =>
+  typeof value === 'string' && SUBJECTS.includes(value as Subject);
+
+interface SavedSession {
+  messages: Message[];
+  subject: Subject;
+}
+
+const parseMessages = (value: unknown): Message[] => {
+  if (!Array.isArray(value)) return [];
+  return value.filter((message): message is Message =>
+    Boolean(
+      message &&
+        typeof message === 'object' &&
+        'id' in message &&
+        typeof message.id === 'string' &&
+        'role' in message &&
+        (message.role === 'user' || message.role === 'model') &&
+        'parts' in message &&
+        Array.isArray(message.parts) &&
+        message.parts.every(isMessagePart) &&
+        (!('rawParts' in message) || message.rawParts === undefined || (Array.isArray(message.rawParts) && message.rawParts.every(isMessagePart)))
+    )
+  );
+};
+
+const loadSavedSession = (): SavedSession => {
   try {
     const savedSession = localStorage.getItem('mathTutorSession');
-    if (!savedSession) return [];
-    const savedMessages: unknown = JSON.parse(savedSession);
-    if (!Array.isArray(savedMessages)) return [];
+    if (!savedSession) return { messages: [], subject: 'calculus' };
+    const parsed: unknown = JSON.parse(savedSession);
+    if (Array.isArray(parsed)) return { messages: parseMessages(parsed), subject: 'calculus' };
+    if (!parsed || typeof parsed !== 'object' || !('messages' in parsed) || !('subject' in parsed) || !isSubject(parsed.subject)) {
+      return { messages: [], subject: 'calculus' };
+    }
 
-    return savedMessages.filter((message): message is Message =>
-      Boolean(
-        message &&
-          typeof message === 'object' &&
-          'id' in message &&
-          typeof message.id === 'string' &&
-          'role' in message &&
-          (message.role === 'user' || message.role === 'model') &&
-          'parts' in message &&
-          Array.isArray(message.parts) &&
-          message.parts.every(isMessagePart) &&
-          (!('rawParts' in message) || message.rawParts === undefined || (Array.isArray(message.rawParts) && message.rawParts.every(isMessagePart)))
-      )
-    );
+    return { messages: parseMessages(parsed.messages), subject: parsed.subject };
   } catch (error) {
     console.error('Failed to load chat session:', error);
     localStorage.removeItem('mathTutorSession');
-    return [];
+    return { messages: [], subject: 'calculus' };
   }
 };
 
 const App: FC = () => {
-  const [messages, setMessages] = useState<Message[]>(loadSavedMessages);
+  const [savedSession] = useState(loadSavedSession);
+  const [messages, setMessages] = useState<Message[]>(savedSession.messages);
+  const [subject, setSubject] = useState<Subject>(savedSession.subject);
+  const sessionRef = useRef(0);
+  const [sessionId, setSessionId] = useState(0);
   
   // Dynamically load the KaTeX script to avoid quirks mode warnings.
   // The MathRenderer component will re-render and use window.katex once it's available.
@@ -58,19 +78,23 @@ const App: FC = () => {
   // Save to local storage whenever messages change
   useEffect(() => {
     try {
-      if (messages.length > 0) {
-        localStorage.setItem('mathTutorSession', JSON.stringify(messages));
-      } else {
-        localStorage.removeItem('mathTutorSession');
-      }
+      localStorage.setItem('mathTutorSession', JSON.stringify({ messages, subject }));
     } catch (error) {
       console.error('Failed to save chat session:', error);
     }
-  }, [messages]);
+  }, [messages, subject]);
   
-  const addMessage = (role: 'user' | 'model', parts: MessagePart[], rawParts?: MessagePart[]) => {
+  const addMessage = (role: 'user' | 'model', parts: MessagePart[], rawParts?: MessagePart[], expectedSessionId = sessionRef.current) => {
+    if (expectedSessionId !== sessionRef.current) return;
     const newMessage: Message = { id: Date.now().toString(), role, parts, rawParts };
     setMessages(prev => [...prev, newMessage]);
+  };
+
+  const clearSession = () => {
+    sessionRef.current += 1;
+    setSessionId(sessionRef.current);
+    setMessages([]);
+    localStorage.removeItem('mathTutorSession');
   };
 
   const handleExportChat = () => {
@@ -89,21 +113,40 @@ const App: FC = () => {
   
   const handleResetChat = () => {
        if(window.confirm("Are you sure you want to start a new session? The current chat will be cleared.")) {
-           setMessages([]);
-           localStorage.removeItem('mathTutorSession');
+           clearSession();
       }
   }
+
+  const handleSubjectChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const nextSubject = event.target.value;
+    if (!isSubject(nextSubject)) return;
+    if (nextSubject === subject) return;
+    if (messages.length > 0 && !window.confirm('Changing subjects starts a new chat. Continue?')) return;
+
+    setSubject(nextSubject);
+    clearSession();
+  };
   
   return (
     <div className="flex flex-col h-full bg-gray-900 text-gray-100 font-sans overflow-hidden">
       <header className="flex-shrink-0 bg-gray-800 shadow-md px-3 py-3 sm:px-4 sm:py-4 lg:px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <h1 className="text-base sm:text-xl lg:text-2xl font-bold text-white truncate">
                   Math Tutor
               </h1>
-            </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+             </div>
+             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                <label className="sr-only" htmlFor="subject">Tutor subject</label>
+                <select
+                  id="subject"
+                  value={subject}
+                  onChange={handleSubjectChange}
+                  className="max-w-32 sm:max-w-none rounded-md bg-gray-700 px-2 py-2 text-xs sm:px-3 sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="calculus">AP Calculus BC</option>
+                  <option value="physics">AP Physics C: Mechanics</option>
+                </select>
                 <button
                   onClick={handleExportChat}
                   disabled={messages.length === 0}
@@ -127,7 +170,7 @@ const App: FC = () => {
       </header>
       <main className="flex-1 flex flex-col overflow-hidden min-h-0">
         <ErrorBoundary>
-          <ChatInterface messages={messages} addMessage={addMessage} />
+          <ChatInterface key={sessionId} messages={messages} subject={subject} sessionId={sessionId} addMessage={addMessage} />
         </ErrorBoundary>
       </main>
     </div>

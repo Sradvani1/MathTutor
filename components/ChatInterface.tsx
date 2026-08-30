@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect, type FC } from 'react';
-import { Message, ImageFile, MessagePart } from '../types';
+import { Message, ImageFile, MessagePart, Subject } from '../types';
 import { sendMessage, getGlossaryDefinition, IMAGE_HISTORY_TEXT } from '../services/geminiService';
 import { MessageBubble } from './MessageBubble';
 import { UserInput } from './UserInput';
@@ -9,10 +9,12 @@ import { GlossaryModal } from './GlossaryModal';
 
 interface ChatInterfaceProps {
   messages: Message[];
-  addMessage: (role: 'user' | 'model', parts: MessagePart[], rawParts?: MessagePart[]) => void;
+  subject: Subject;
+  sessionId: number;
+  addMessage: (role: 'user' | 'model', parts: MessagePart[], rawParts?: MessagePart[], expectedSessionId?: number) => void;
 }
 
-const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage }) => {
+const ChatInterface: FC<ChatInterfaceProps> = ({ messages, subject, sessionId, addMessage }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
   
@@ -20,6 +22,7 @@ const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage }) => {
   const [glossaryDefinition, setGlossaryDefinition] = useState<string>('');
   const [isGlossaryLoading, setIsGlossaryLoading] = useState<boolean>(false);
   const glossaryRequestRef = useRef(0);
+  const inFlightRef = useRef(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -93,7 +96,7 @@ const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage }) => {
       setGlossaryTerm(term);
       setIsGlossaryLoading(true);
       try {
-        const definition = await getGlossaryDefinition(term);
+        const definition = await getGlossaryDefinition(term, subject);
         if (glossaryRequestRef.current === requestId) setGlossaryDefinition(definition);
       } catch (error) {
         if (glossaryRequestRef.current === requestId) {
@@ -111,6 +114,8 @@ const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage }) => {
   };
 
   const handleImageUpload = async (imageFile: ImageFile) => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     // Use a flag to track if we should show error message
     let shouldShowErrorMessage = true;
     
@@ -130,7 +135,7 @@ const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage }) => {
 
       // Add message immediately so image displays right away
       try {
-        addMessage('user', imageMessageParts, [{ text: IMAGE_HISTORY_TEXT }]);
+        addMessage('user', imageMessageParts, [{ text: IMAGE_HISTORY_TEXT }], sessionId);
       } catch (addMessageError) {
         console.error("Error adding message:", addMessageError);
         // Don't show error message if we couldn't even add the user message
@@ -157,7 +162,7 @@ const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage }) => {
               setIsLoading(false);
               setShowSuggestions(true);
               if (shouldShowErrorMessage) {
-                addMessage('model', [{ text: errorMessage }]);
+                addMessage('model', [{ text: errorMessage }], undefined, sessionId);
               }
               resolve();
             } catch (recoveryError) {
@@ -177,13 +182,15 @@ const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage }) => {
           // If even this fails, the app might be in a bad state, but we've done our best
         }
       }
+      inFlightRef.current = false;
     }
   };
 
   const handleSendMessage = async (text: string) => {
-    if (!text.trim() || !isChatActive) return;
+    if (!text.trim() || !isChatActive || inFlightRef.current) return;
+    inFlightRef.current = true;
     const parts: MessagePart[] = [{ text }];
-    addMessage('user', parts);
+    addMessage('user', parts, undefined, sessionId);
     await getAIResponse(parts);
   };
   
@@ -192,13 +199,14 @@ const ChatInterface: FC<ChatInterfaceProps> = ({ messages, addMessage }) => {
     setShowSuggestions(false);
     
     try {
-        const responseText = await sendMessage(prompt, messages);
+        const responseText = await sendMessage(prompt, messages, subject);
 
-        addMessage('model', [{ text: responseText }]);
+        addMessage('model', [{ text: responseText }], undefined, sessionId);
     } catch (error) {
          console.error("Error getting response:", error);
-          addMessage('model', [{ text: error instanceof Error ? error.message : 'I encountered an error. Could you please rephrase or try again?' }]);
+           addMessage('model', [{ text: error instanceof Error ? error.message : 'I encountered an error. Could you please rephrase or try again?' }], undefined, sessionId);
     } finally {
+        inFlightRef.current = false;
         setIsLoading(false);
         setShowSuggestions(true);
     }

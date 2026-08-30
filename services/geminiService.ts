@@ -1,4 +1,4 @@
-import { Message, MessagePart } from '../types';
+import { Message, MessagePart, Subject } from '../types';
 
 interface ApiError {
   error?: string;
@@ -54,10 +54,11 @@ const request = async <T>(path: string, body: unknown): Promise<T> => {
   }
 };
 
-export const sendMessage = async (message: MessagePart[], history: Message[]): Promise<string> => {
+export const sendMessage = async (message: MessagePart[], history: Message[], subject: Subject): Promise<string> => {
   const response = await request<{ text: string }>('/api/chat', {
     history: toHistory(history),
     message,
+    subject,
   });
 
   if (!response.text) {
@@ -67,8 +68,8 @@ export const sendMessage = async (message: MessagePart[], history: Message[]): P
   return response.text;
 };
 
-export const getGlossaryDefinition = async (term: string): Promise<string> => {
-  const response = await request<{ text: string }>('/api/glossary', { term });
+export const getGlossaryDefinition = async (term: string, subject: Subject): Promise<string> => {
+  const response = await request<{ text: string }>('/api/glossary', { term, subject });
   return response.text;
 };
 

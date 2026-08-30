@@ -4,7 +4,7 @@
 
 # Math Tutor
 
-An image-based calculus tutor powered by Gemini.
+An image-based AP Calculus and AP Physics C: Mechanics tutor powered by Gemini.
 
 ## Run Locally
 

@@ -1,5 +1,7 @@
 
 export type Role = 'user' | 'model';
+export const SUBJECTS = ['calculus', 'physics'] as const;
+export type Subject = (typeof SUBJECTS)[number];
 
 export type MessagePart =
   | { text: string }

@@ -1,20 +1,41 @@
 import { GoogleGenAI, type Content, type Part } from '@google/genai';
 import { errorResponse, parseHistory, parseJsonBody, parsePart } from './shared';
+import { SUBJECTS, type Subject } from '../types';
 
 export const maxDuration = 60;
 
-const TUTOR_SYSTEM_INSTRUCTION = "You are a high school math tutor specializing in algebra, geometry and calculus. Your primary goal is to help the user understand how to solve problems through clear, step-by-step explanations. When presenting mathematical formulas or variables, always enclose them in LaTeX delimiters. Use single dollar signs for inline math (e.g., $f(x) = x^2$) and double dollar signs for display math (e.g., $$ \\int x^2 dx $$). When you introduce a key mathematical concept (like 'Product Rule', 'Chain Rule', 'L'Hopital's Rule', etc.), wrap it in a special format: [glossary:The Concept Name]. Do not use this format for simple variables or formulas, only for named concepts, theorems, or rules. Do not use markdown formatting (no ** for bold, no # for headers, no * for bullet points). Use plain text with line breaks for structure.";
+const BASE_SYSTEM_INSTRUCTION = `You are a supportive high-school tutor. Help the student understand and solve the problem through clear, step-by-step explanations. Adapt the depth of your explanation to an AP-level senior student.
+
+Use LaTeX for all mathematical formulas and variables: $...$ inline and $$...$$ for display math. When introducing a named concept, theorem, law, or rule, use [glossary:Concept Name].
+
+Do not use Markdown formatting. Use plain text with line breaks for structure. Show reasoning, state assumptions, and distinguish exact results from approximations. Do not merely provide an answer when an explanation is needed.`;
+
+const SUBJECT_INSTRUCTIONS = {
+  calculus: `Subject: AP Calculus BC.
+
+Teach limits, continuity, derivatives, applications of derivatives, integrals, differential equations, accumulation, and series where relevant. Name and explain the applicable AP Calculus rule or theorem. Connect symbolic work to graphs, units, and interpretation when useful. Use correct notation and state domain restrictions or conditions where they matter.`,
+  physics: `Subject: AP Physics C: Mechanics.
+
+Teach calculus-based introductory mechanics at an AP Physics C senior level. Identify the physical system, knowns, unknowns, coordinate axes, sign convention, and assumptions before calculating. Use free-body diagrams and Newton's laws where applicable.
+
+Cover kinematics; forces; work, energy, and power; linear momentum and collisions; circular motion and gravitation; rotation, torque, angular momentum, and equilibrium; and simple harmonic motion. Use calculus when relevant, including derivatives for velocity and acceleration and integrals for displacement, work, momentum, or rotational quantities.
+
+Use SI units by default, track units throughout, state vector directions clearly, and check the final result for sensible units, sign, and magnitude. Explain the physical meaning of each major step, not only the calculation.`,
+} as const;
+
+const isSubject = (value: unknown): value is Subject =>
+  typeof value === 'string' && SUBJECTS.includes(value as Subject);
 
 export default async function handler(request: Request) {
   if (request.method !== 'POST') return errorResponse('Method not allowed.', 405);
 
   const body = await parseJsonBody(request);
-  if (!body || typeof body !== 'object' || !('history' in body) || !('message' in body)) {
+  if (!body || typeof body !== 'object' || !('history' in body) || !('message' in body) || !('subject' in body)) {
     return errorResponse('Invalid request.', 400);
   }
 
   const history = parseHistory(body.history);
-  if (!history || !Array.isArray(body.message) || body.message.length === 0 || body.message.length > 2) {
+  if (!history || !isSubject(body.subject) || !Array.isArray(body.message) || body.message.length === 0 || body.message.length > 2) {
     return errorResponse('Invalid conversation data.', 400);
   }
 
@@ -27,7 +48,7 @@ export default async function handler(request: Request) {
   const prompt = message as Part[];
   const hasImage = prompt.some((part) => 'inlineData' in part);
   if (hasImage && !prompt.some((part) => 'text' in part)) {
-    prompt.push({ text: "Here is a math problem I'm working on. Please look at the image, identify the problem, and explain how to solve it step-by-step." });
+    prompt.push({ text: "Here is a problem I'm working on. Please look at the image, identify the problem, and explain how to solve it step-by-step." });
   }
 
   try {
@@ -35,7 +56,7 @@ export default async function handler(request: Request) {
     const chat = ai.chats.create({
       model: 'gemini-2.5-pro',
       history: history as Content[],
-      config: { systemInstruction: TUTOR_SYSTEM_INSTRUCTION, thinkingConfig: { thinkingBudget: 32768 } },
+      config: { systemInstruction: `${BASE_SYSTEM_INSTRUCTION}\n\n${SUBJECT_INSTRUCTIONS[body.subject]}`, thinkingConfig: { thinkingBudget: 32768 } },
     });
     const result = await chat.sendMessage({ message: prompt });
     if (!result.text) return errorResponse("The tutor couldn't produce a response. Please try again.", 502);

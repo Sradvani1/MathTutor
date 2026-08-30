@@ -1,14 +1,19 @@
 import { GoogleGenAI } from '@google/genai';
 import { errorResponse, parseJsonBody } from './shared';
+import { SUBJECTS, type Subject } from '../types';
 
 export const maxDuration = 30;
+
+const isSubject = (value: unknown): value is Subject =>
+  typeof value === 'string' && SUBJECTS.includes(value as Subject);
 
 export default async function handler(request: Request) {
   if (request.method !== 'POST') return errorResponse('Method not allowed.', 405);
 
   const body = await parseJsonBody(request);
   const term = body && typeof body === 'object' && 'term' in body && typeof body.term === 'string' ? body.term.trim() : '';
-  if (!term || term.length > 120) return errorResponse('Invalid glossary term.', 400);
+  const subject = body && typeof body === 'object' && 'subject' in body ? body.subject : undefined;
+  if (!term || term.length > 120 || !isSubject(subject)) return errorResponse('Invalid glossary request.', 400);
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return errorResponse('The tutor is temporarily unavailable.', 503);
@@ -17,7 +22,7 @@ export default async function handler(request: Request) {
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Please provide a concise definition and a simple example for the following mathematical concept: "${term}". Use LaTeX for any formulas. Format your response in plain text without markdown formatting (do not use ** for bold or # for headers). Structure it clearly with line breaks between sections.`,
+      contents: `Please provide a concise definition and a simple example for the following ${subject === 'physics' ? 'AP Physics C: Mechanics concept' : 'AP Calculus BC concept'}: "${term}". Use LaTeX for any formulas. Format your response in plain text without markdown formatting (do not use ** for bold or # for headers). Structure it clearly with line breaks between sections.`,
     });
     return Response.json({ text: response.text || 'No definition was returned.' }, { headers: { 'Cache-Control': 'no-store' } });
   } catch {
