@@ -2,7 +2,7 @@ import { GoogleGenAI, type Content, type Part } from '@google/genai';
 import { errorResponse, parseHistory, parseJsonBody, parsePart } from '../lib/api.js';
 import { SUBJECTS, type Subject } from '../types.js';
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const BASE_SYSTEM_INSTRUCTION = `You are a supportive high-school tutor. Help the student understand and solve the problem through clear, step-by-step explanations. Adapt the depth of your explanation to an AP-level senior student.
 

@@ -5,7 +5,7 @@ interface ApiError {
 }
 
 const MAX_HISTORY_MESSAGES = 20;
-const REQUEST_TIMEOUT_MS = 85_000;
+const REQUEST_TIMEOUT_MS = 295_000;
 const IMAGE_HISTORY_TEXT = 'The user submitted an image problem for you to solve.';
 
 const toHistory = (messages: Message[]) => {
