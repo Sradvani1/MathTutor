@@ -64,7 +64,22 @@ export default async function handler(request: Request) {
     const result = await chat.sendMessage({ message: prompt });
     if (!result.text) return errorResponse("The tutor couldn't produce a response. Please try again.", 502);
     return Response.json({ text: result.text }, { headers: { 'Cache-Control': 'no-store' } });
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const status = (error as { status?: number })?.status;
+    console.error('[api/chat] Gemini error', status, message);
+    if (status === 400 || message.includes('API_KEY_INVALID') || message.includes('API key not valid')) {
+      return errorResponse('The Gemini API key is invalid or revoked. Update GEMINI_API_KEY in Vercel and redeploy.', 503);
+    }
+    if (status === 403 || status === 401) {
+      return errorResponse('Gemini API authentication failed. Check the API key and Generative Language API enablement.', 503);
+    }
+    if (status === 429) {
+      return errorResponse('Gemini quota exceeded. Try again later.', 503);
+    }
+    if (status === 404 || message.includes('not found') || message.includes('not supported')) {
+      return errorResponse('The configured Gemini model is not available for this key/project. Check model availability in AI Studio.', 503);
+    }
     return errorResponse('The tutor could not process that request. Please try again.', 502);
   }
 }
