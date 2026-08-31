@@ -1,8 +1,9 @@
 import { GoogleGenAI, type Content, type Part } from '@google/genai';
-import { errorResponse, parseHistory, parseJsonBody, parsePart } from '../lib/api.js';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { parseHistory, parsePart } from '../lib/api.js';
 import { SUBJECTS, type Subject } from '../types.js';
 
-export const maxDuration = 300;
+export const config = { maxDuration: 300 };
 
 const BASE_SYSTEM_INSTRUCTION = `You are a supportive high-school tutor. Help the student understand and solve the problem through clear, step-by-step explanations. Adapt the depth of your explanation to an AP-level senior student.
 
@@ -26,24 +27,24 @@ Use SI units by default, track units throughout, state vector directions clearly
 const isSubject = (value: unknown): value is Subject =>
   typeof value === 'string' && SUBJECTS.includes(value as Subject);
 
-export default async function handler(request: Request) {
-  if (request.method !== 'POST') return errorResponse('Method not allowed.', 405);
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed.' });
 
-  const body = await parseJsonBody(request);
+  const body = req.body as unknown;
   if (!body || typeof body !== 'object' || !('history' in body) || !('message' in body) || !('subject' in body)) {
-    return errorResponse('Invalid request.', 400);
+    return res.status(400).json({ error: 'Invalid request.' });
   }
 
-  const history = parseHistory(body.history);
-  if (!history || !isSubject(body.subject) || !Array.isArray(body.message) || body.message.length === 0 || body.message.length > 2) {
-    return errorResponse('Invalid conversation data.', 400);
+  const history = parseHistory((body as { history: unknown }).history);
+  if (!history || !isSubject((body as { subject: unknown }).subject) || !Array.isArray((body as { message: unknown }).message) || (body as { message: unknown[] }).message.length === 0 || (body as { message: unknown[] }).message.length > 2) {
+    return res.status(400).json({ error: 'Invalid conversation data.' });
   }
 
-  const message = body.message.map((part) => parsePart(part, true));
-  if (message.some((part) => !part)) return errorResponse('Invalid message data.', 400);
+  const message = ((body as { message: unknown[] }).message).map((part) => parsePart(part, true));
+  if (message.some((part) => !part)) return res.status(400).json({ error: 'Invalid message data.' });
 
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return errorResponse('The tutor is temporarily unavailable.', 503);
+  if (!apiKey) return res.status(503).json({ error: 'The tutor is temporarily unavailable.' });
 
   const prompt = message as Part[];
   const hasImage = prompt.some((part) => 'inlineData' in part);
@@ -57,29 +58,30 @@ export default async function handler(request: Request) {
       model: 'gemini-3.7-flash',
       history: history as Content[],
       config: {
-        systemInstruction: `${BASE_SYSTEM_INSTRUCTION}\n\n${SUBJECT_INSTRUCTIONS[body.subject]}`,
+        systemInstruction: `${BASE_SYSTEM_INSTRUCTION}\n\n${SUBJECT_INSTRUCTIONS[(body as { subject: Subject }).subject]}`,
         thinkingConfig: { thinkingBudget: -1 },
       },
     });
     const result = await chat.sendMessage({ message: prompt });
-    if (!result.text) return errorResponse("The tutor couldn't produce a response. Please try again.", 502);
-    return Response.json({ text: result.text }, { headers: { 'Cache-Control': 'no-store' } });
+    if (!result.text) return res.status(502).json({ error: "The tutor couldn't produce a response. Please try again." });
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json({ text: result.text });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const msg = error instanceof Error ? error.message : String(error);
     const status = (error as { status?: number })?.status;
-    console.error('[api/chat] Gemini error', status, message);
-    if (status === 400 || message.includes('API_KEY_INVALID') || message.includes('API key not valid')) {
-      return errorResponse('The Gemini API key is invalid or revoked. Update GEMINI_API_KEY in Vercel and redeploy.', 503);
+    console.error('[api/chat] Gemini error', status, msg);
+    if (status === 400 || msg.includes('API_KEY_INVALID') || msg.includes('API key not valid')) {
+      return res.status(503).json({ error: 'The Gemini API key is invalid or revoked. Update GEMINI_API_KEY in Vercel and redeploy.' });
     }
     if (status === 403 || status === 401) {
-      return errorResponse('Gemini API authentication failed. Check the API key and Generative Language API enablement.', 503);
+      return res.status(503).json({ error: 'Gemini API authentication failed. Check the API key and Generative Language API enablement.' });
     }
     if (status === 429) {
-      return errorResponse('Gemini quota exceeded. Try again later.', 503);
+      return res.status(503).json({ error: 'Gemini quota exceeded. Try again later.' });
     }
-    if (status === 404 || message.includes('not found') || message.includes('not supported')) {
-      return errorResponse('The configured Gemini model is not available for this key/project. Check model availability in AI Studio.', 503);
+    if (status === 404 || msg.includes('not found') || msg.includes('not supported')) {
+      return res.status(503).json({ error: 'The configured Gemini model is not available for this key/project. Check model availability in AI Studio.' });
     }
-    return errorResponse('The tutor could not process that request. Please try again.', 502);
+    return res.status(502).json({ error: 'The tutor could not process that request. Please try again.' });
   }
 }
