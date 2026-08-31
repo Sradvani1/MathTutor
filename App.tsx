@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef, type ChangeEvent, type FC } from 'react';
+import { useState, useEffect, useRef, type FC } from 'react';
 import ChatInterface from './components/ChatInterface';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Message, MessagePart, Subject, SUBJECTS } from './types';
@@ -117,8 +117,7 @@ const App: FC = () => {
       }
   }
 
-  const handleSubjectChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const nextSubject = event.target.value;
+  const handleSubjectChange = (nextSubject: Subject) => {
     if (!isSubject(nextSubject)) return;
     if (nextSubject === subject) return;
     if (messages.length > 0 && !window.confirm('Changing subjects starts a new chat. Continue?')) return;
@@ -131,22 +130,31 @@ const App: FC = () => {
     <div className="flex flex-col h-full bg-gray-900 text-gray-100 font-sans overflow-hidden">
       <header className="flex-shrink-0 bg-gray-800 shadow-md px-3 py-3 sm:px-4 sm:py-4 lg:px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <h1 className="text-base sm:text-xl lg:text-2xl font-bold text-white truncate">
-                  Math Tutor
-              </h1>
-             </div>
-             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                <label className="sr-only" htmlFor="subject">Tutor subject</label>
-                <select
-                  id="subject"
-                  value={subject}
-                  onChange={handleSubjectChange}
-                  className="max-w-32 sm:max-w-none rounded-md bg-gray-700 px-2 py-2 text-xs sm:px-3 sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="calculus">AP Calculus BC</option>
-                  <option value="physics">AP Physics C: Mechanics</option>
-                </select>
+          <div className="flex items-center min-w-0">
+            <div role="radiogroup" aria-label="Tutor subject" className="flex rounded-full bg-gray-700 p-1 gap-1">
+              <button
+                type="button"
+                role="radio"
+                aria-checked={subject === 'calculus'}
+                onClick={() => handleSubjectChange('calculus')}
+                className={`rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 ${subject === 'calculus' ? 'bg-teal-500 text-white shadow' : 'text-gray-300 hover:bg-gray-600 hover:text-white'}`}
+              >
+                <span className="hidden sm:inline">AP Calculus BC</span>
+                <span className="sm:hidden">Calculus BC</span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={subject === 'physics'}
+                onClick={() => handleSubjectChange('physics')}
+                className={`rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 ${subject === 'physics' ? 'bg-teal-500 text-white shadow' : 'text-gray-300 hover:bg-gray-600 hover:text-white'}`}
+              >
+                <span className="hidden sm:inline">AP Physics C: Mechanics</span>
+                <span className="sm:hidden">Physics C</span>
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                 <button
                   onClick={handleExportChat}
                   disabled={messages.length === 0}
