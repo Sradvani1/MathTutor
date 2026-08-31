@@ -72,7 +72,11 @@ export const parseHistory = (value: unknown): ApiMessage[] | null => {
     if (!item || typeof item !== 'object' || !('role' in item) || !('parts' in item)) return null;
     if ((item.role !== 'user' && item.role !== 'model') || !Array.isArray(item.parts)) return null;
     const candidateParts = item.parts as unknown[];
-    const parts = candidateParts.map((part: unknown) => parsePart(part, false));
+    // History can contain long model responses; validate as text without the 4k per-part limit for new messages.
+    const parts: (TextPart | null)[] = candidateParts.map((part: unknown) => {
+      if (!isTextPart(part) || part.text.trim().length === 0) return null;
+      return { text: part.text.trim() };
+    });
     if (parts.some((part) => !part)) return null;
     const validParts = parts as TextPart[];
     if (validParts.length === 0) return null;
